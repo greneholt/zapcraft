@@ -1,6 +1,6 @@
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/arch/arm/configs/panda_beada_defconfig ../Beada20120202/Android/omap-omapzoom/arch/arm/configs/panda_beada_defconfig
---- omap-omapzoom/arch/arm/configs/panda_beada_defconfig	1969-12-31 17:00:00.000000000 -0700
-+++ ../Beada20120202/Android/omap-omapzoom/arch/arm/configs/panda_beada_defconfig	2012-02-02 05:50:19.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' arch/arm/configs/panda_beada_defconfig arch/arm/configs/panda_beada_defconfig
+--- arch/arm/configs/panda_beada_defconfig	1969-12-31 17:00:00.000000000 -0700
++++ arch/arm/configs/panda_beada_defconfig	2012-02-02 05:50:19.000000000 -0700
 @@ -0,0 +1,2726 @@
 +#
 +# Automatically generated make config: don't edit
@@ -2728,9 +2728,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/arch/arm/configs/panda_beada_d
 +CONFIG_CPU_RMAP=y
 +CONFIG_NLATTR=y
 +CONFIG_AVERAGE=y
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/arch/arm/mach-omap2/board-omap4panda.c ../Beada20120202/Android/omap-omapzoom/arch/arm/mach-omap2/board-omap4panda.c
---- omap-omapzoom/arch/arm/mach-omap2/board-omap4panda.c	2012-03-18 22:47:30.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/arch/arm/mach-omap2/board-omap4panda.c	2012-02-02 02:52:06.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' arch/arm/mach-omap2/board-omap4panda.c arch/arm/mach-omap2/board-omap4panda.c
+--- arch/arm/mach-omap2/board-omap4panda.c	2012-03-22 19:20:02.754022002 -0600
++++ arch/arm/mach-omap2/board-omap4panda.c	2012-02-02 02:52:06.000000000 -0700
 @@ -487,32 +487,46 @@
  	}
  }
@@ -2818,9 +2818,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/arch/arm/mach-omap2/board-omap
  	.type			= OMAP_DISPLAY_TYPE_DPI,
  	.name			= "dvi",
  	.driver_name		= "generic_dpi_panel",
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/Kconfig ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/Kconfig
---- omap-omapzoom/drivers/input/touchscreen/Kconfig	2012-03-18 22:47:32.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/Kconfig	2012-02-02 02:58:37.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/input/touchscreen/Kconfig drivers/input/touchscreen/Kconfig
+--- drivers/input/touchscreen/Kconfig	2012-03-22 19:20:05.250022001 -0600
++++ drivers/input/touchscreen/Kconfig	2012-02-02 02:58:37.000000000 -0700
 @@ -93,16 +93,29 @@
  	  Say Y here if you have Atmel mXT series I2C touchscreen,
  	  such as AT42QT602240/ATMXT224, connected to your system.
@@ -2851,9 +2851,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/Kcon
  	  Say Y here if you have the h3600 (Bitsy) touchscreen.
  
  	  If unsure, say N.
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/Makefile ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/Makefile
---- omap-omapzoom/drivers/input/touchscreen/Makefile	2012-03-18 22:47:32.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/Makefile	2012-02-02 02:59:57.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/input/touchscreen/Makefile drivers/input/touchscreen/Makefile
+--- drivers/input/touchscreen/Makefile	2012-03-22 19:20:05.250022001 -0600
++++ drivers/input/touchscreen/Makefile	2012-02-02 02:59:57.000000000 -0700
 @@ -58,8 +58,9 @@
  wm97xx-ts-$(CONFIG_TOUCHSCREEN_WM9713)	+= wm9713.o
  obj-$(CONFIG_TOUCHSCREEN_WM97XX_ATMEL)	+= atmel-wm97xx.o
@@ -2864,9 +2864,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/Make
  obj-$(CONFIG_TOUCHSCREEN_SYNTM12XX)	+= syntm12xx.o
  obj-$(CONFIG_TOUCHSCREEN_QUANTUM_OBP)	+= qtouch_obp_ts.o
 +obj-$(CONFIG_TOUCHSCREEN_BEADAFRAME)	+= tsc-beada.o
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/tsc-beada.c ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/tsc-beada.c
---- omap-omapzoom/drivers/input/touchscreen/tsc-beada.c	1969-12-31 17:00:00.000000000 -0700
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/input/touchscreen/tsc-beada.c	2012-02-03 02:05:53.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/input/touchscreen/tsc-beada.c drivers/input/touchscreen/tsc-beada.c
+--- drivers/input/touchscreen/tsc-beada.c	1969-12-31 17:00:00.000000000 -0700
++++ drivers/input/touchscreen/tsc-beada.c	2012-02-03 02:05:53.000000000 -0700
 @@ -0,0 +1,720 @@
 +/*
 + * ADS7846 based touchscreen and sensor driver
@@ -3588,9 +3588,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/input/touchscreen/tsc-
 +MODULE_DESCRIPTION("Beada Frame touch screen driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:beadaframe-tsc");
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/rtc/rtc-ds1307.c ../Beada20120202/Android/omap-omapzoom/drivers/rtc/rtc-ds1307.c
---- omap-omapzoom/drivers/rtc/rtc-ds1307.c	2012-03-18 22:47:33.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/rtc/rtc-ds1307.c	2012-02-02 03:21:10.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/rtc/rtc-ds1307.c drivers/rtc/rtc-ds1307.c
+--- drivers/rtc/rtc-ds1307.c	2012-03-22 19:20:06.678022001 -0600
++++ drivers/rtc/rtc-ds1307.c	2012-02-02 03:21:10.000000000 -0700
 @@ -1,49 +1,48 @@
  /*
   * rtc-ds1307.c - RTC driver for some mostly-compatible I2C chips.
@@ -4015,9 +4015,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/rtc/rtc-ds1307.c ../Be
  	case ds_1339:
  	case ds_1388:
  	case ds_3231:
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/Kconfig ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/Kconfig
---- omap-omapzoom/drivers/video/backlight/Kconfig	2012-03-18 22:47:35.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/Kconfig	2012-02-02 03:03:36.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/video/backlight/Kconfig drivers/video/backlight/Kconfig
+--- drivers/video/backlight/Kconfig	2012-03-22 19:20:08.094022001 -0600
++++ drivers/video/backlight/Kconfig	2012-02-02 03:03:36.000000000 -0700
 @@ -322,11 +322,23 @@
  
  config BACKLIGHT_PCF50633
@@ -4042,9 +4042,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/Kconfi
  endif # BACKLIGHT_CLASS_DEVICE
  
  endif # BACKLIGHT_LCD_SUPPORT
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/Makefile ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/Makefile
---- omap-omapzoom/drivers/video/backlight/Makefile	2012-03-18 22:47:35.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/Makefile	2012-02-02 03:04:21.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/video/backlight/Makefile drivers/video/backlight/Makefile
+--- drivers/video/backlight/Makefile	2012-03-22 19:20:08.094022001 -0600
++++ drivers/video/backlight/Makefile	2012-02-02 03:04:21.000000000 -0700
 @@ -32,9 +32,10 @@
  obj-$(CONFIG_BACKLIGHT_SAHARA)	+= kb3886_bl.o
  obj-$(CONFIG_BACKLIGHT_WM831X)	+= wm831x_bl.o
@@ -4056,9 +4056,9 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/Makefi
  obj-$(CONFIG_BACKLIGHT_PCF50633)	+= pcf50633-backlight.o
 +obj-$(CONFIG_BACKLIGHT_BEADAFRAME) += pwm-beada.o
  
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/pwm-beada.c ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/pwm-beada.c
---- omap-omapzoom/drivers/video/backlight/pwm-beada.c	1969-12-31 17:00:00.000000000 -0700
-+++ ../Beada20120202/Android/omap-omapzoom/drivers/video/backlight/pwm-beada.c	2011-11-06 22:28:48.000000000 -0700
+diff -rN -U 8 -x '*.git' -x '*.DS*' drivers/video/backlight/pwm-beada.c drivers/video/backlight/pwm-beada.c
+--- drivers/video/backlight/pwm-beada.c	1969-12-31 17:00:00.000000000 -0700
++++ drivers/video/backlight/pwm-beada.c	2011-11-06 22:28:48.000000000 -0700
 @@ -0,0 +1,314 @@
 +/*
 + * Backlight driver for Beada Frame Backlight Devices
@@ -4374,124 +4374,3 @@ diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/drivers/video/backlight/pwm-be
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("Beada Frame PWM driver");
 +MODULE_ALIAS("platform:beadaframe-pwm");
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/include/linux/netfilter/xt_DSCP.h ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter/xt_DSCP.h
---- omap-omapzoom/include/linux/netfilter/xt_DSCP.h	1969-12-31 17:00:00.000000000 -0700
-+++ ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter/xt_DSCP.h	2012-01-26 05:06:52.000000000 -0700
-@@ -0,0 +1,31 @@
-+/* x_tables module for matching the IPv4/IPv6 DSCP field
-+ *
-+ * (C) 2002 Harald Welte <laforge@gnumonks.org>
-+ * This software is distributed under GNU GPL v2, 1991
-+ *
-+ * See RFC2474 for a description of the DSCP field within the IP Header.
-+ *
-+ * xt_dscp.h,v 1.3 2002/08/05 19:00:21 laforge Exp
-+*/
-+#ifndef _XT_DSCP_H
-+#define _XT_DSCP_H
-+
-+#include <linux/types.h>
-+
-+#define XT_DSCP_MASK	0xfc	/* 11111100 */
-+#define XT_DSCP_SHIFT	2
-+#define XT_DSCP_MAX	0x3f	/* 00111111 */
-+
-+/* match info */
-+struct xt_dscp_info {
-+	__u8 dscp;
-+	__u8 invert;
-+};
-+
-+struct xt_tos_match_info {
-+	__u8 tos_mask;
-+	__u8 tos_value;
-+	__u8 invert;
-+};
-+
-+#endif /* _XT_DSCP_H */
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/include/linux/netfilter/xt_dscp.h ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter/xt_dscp.h
---- omap-omapzoom/include/linux/netfilter/xt_dscp.h	2012-03-18 22:47:36.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter/xt_dscp.h	1969-12-31 17:00:00.000000000 -0700
-@@ -1,26 +0,0 @@
--/* x_tables module for setting the IPv4/IPv6 DSCP field
-- *
-- * (C) 2002 Harald Welte <laforge@gnumonks.org>
-- * based on ipt_FTOS.c (C) 2000 by Matthew G. Marsh <mgm@paktronix.com>
-- * This software is distributed under GNU GPL v2, 1991
-- *
-- * See RFC2474 for a description of the DSCP field within the IP Header.
-- *
-- * xt_DSCP.h,v 1.7 2002/03/14 12:03:13 laforge Exp
--*/
--#ifndef _XT_DSCP_TARGET_H
--#define _XT_DSCP_TARGET_H
--#include <linux/netfilter/xt_dscp.h>
--#include <linux/types.h>
--
--/* target info */
--struct xt_DSCP_info {
--	__u8 dscp;
--};
--
--struct xt_tos_target_info {
--	__u8 tos_value;
--	__u8 tos_mask;
--};
--
--#endif /* _XT_DSCP_TARGET_H */
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/include/linux/netfilter_ipv6/ip6t_HL.h ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter_ipv6/ip6t_HL.h
---- omap-omapzoom/include/linux/netfilter_ipv6/ip6t_HL.h	1969-12-31 17:00:00.000000000 -0700
-+++ ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter_ipv6/ip6t_HL.h	2012-01-26 05:06:52.000000000 -0700
-@@ -0,0 +1,24 @@
-+/* ip6tables module for matching the Hop Limit value
-+ * Maciej Soltysiak <solt@dns.toxicfilms.tv>
-+ * Based on HW's ttl module */
-+
-+#ifndef _IP6T_HL_H
-+#define _IP6T_HL_H
-+
-+#include <linux/types.h>
-+
-+enum {
-+	IP6T_HL_EQ = 0,		/* equals */
-+	IP6T_HL_NE,		/* not equals */
-+	IP6T_HL_LT,		/* less than */
-+	IP6T_HL_GT,		/* greater than */
-+};
-+
-+
-+struct ip6t_hl_info {
-+	__u8	mode;
-+	__u8	hop_limit;
-+};
-+
-+
-+#endif
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/include/linux/netfilter_ipv6/ip6t_hl.h ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter_ipv6/ip6t_hl.h
---- omap-omapzoom/include/linux/netfilter_ipv6/ip6t_hl.h	2012-03-18 22:47:36.000000000 -0600
-+++ ../Beada20120202/Android/omap-omapzoom/include/linux/netfilter_ipv6/ip6t_hl.h	1969-12-31 17:00:00.000000000 -0700
-@@ -1,24 +0,0 @@
--/* Hop Limit modification module for ip6tables
-- * Maciej Soltysiak <solt@dns.toxicfilms.tv>
-- * Based on HW's TTL module */
--
--#ifndef _IP6T_HL_H
--#define _IP6T_HL_H
--
--#include <linux/types.h>
--
--enum {
--	IP6T_HL_SET = 0,
--	IP6T_HL_INC,
--	IP6T_HL_DEC
--};
--
--#define IP6T_HL_MAXMODE	IP6T_HL_DEC
--
--struct ip6t_HL_info {
--	__u8	mode;
--	__u8	hop_limit;
--};
--
--
--#endif
