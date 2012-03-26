@@ -1,0 +1,22 @@
+## On Linux
+
+# Get artifacts
+$ wget http://releases.linaro.org/12.01/android/images/landing-panda/boot.tar.bz2 http://releases.linaro.org/12.01/android/images/landing-panda/system.tar.bz2 http://releases.linaro.org/12.01/android/images/landing-panda/userdata.tar.bz2
+
+# Get linaro image tools
+$ sudo add-apt-repository ppa:linaro-maintainers/tools
+$ sudo apt-get update
+$ sudo apt-get install linaro-image-tools
+
+# Create image file
+$ sudo linaro-android-media-create --image-file landing12.01.img --dev panda --system system.tar.bz2 --boot boot.tar.bz2 --userdata userdata.tar.bz2
+
+# Get binaries
+$ ./install-binaries.sh landing12.01.img "second partition offset"
+
+## On Mac
+
+# Write image to SD card
+$ dd if=landing12.01.img of=/dev/disk2 bs=1073741824
+
+# Copy the uImage and uInitrd files into the boot partition of the SD card

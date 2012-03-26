@@ -1,1 +1,0 @@
-The defconfig was created using a combination of the usb_working_defconfig and the standard panda_beada_defonfig. I used all the USB_CONFIG* lines out of the USB config, and removed them all from the Beada config.
