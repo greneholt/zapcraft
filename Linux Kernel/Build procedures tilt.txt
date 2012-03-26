@@ -1,3 +1,5 @@
+This is the cleaned up build command I used for compiling the TILT kernel. It will work on either though, and only differs in the KCFLAGS from the normal build procedure.
+
 make "V=1" KCFLAGS="-mtune=cortex-a9 -mcpu=cortex-a9 -fno-pic -mno-unaligned-access" ARCH=arm LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- distclean
-make -j1 KCFLAGS="-mtune=cortex-a9 -mcpu=cortex-a9 -fno-pic -mno-unaligned-access" "V=1" ARCH=arm CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd defconfig beada_defconfig
+make -j1 KCFLAGS="-mtune=cortex-a9 -mcpu=cortex-a9 -fno-pic -mno-unaligned-access" "V=1" ARCH=arm CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd defconfig panda_beada_defconfig
 make "V=1" ARCH=arm CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- KCFLAGS="-mtune=cortex-a9 -mcpu=cortex-a9 -fno-pic -mno-unaligned-access" LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd uImage

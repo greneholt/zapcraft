@@ -1,0 +1,58 @@
+The ueventd.rc file is stored at the root of the filesystem, which is stored in a ramdisk in the uInitrd file on the boot sector of the SD card. To permanently change the contents of this ramdisk, the procedure outlined in this file must be followed.
+
+= Debugging on Initrd =
+Sometimes we hit a bug that involves tools on the initial RAM disk
+used during boot.  This page covers how to debug that.
+
+See also [[Releases/GettingInstallingTesting]] and http://www.alexonlinux.com/opening-and-modifying-the-initrd
+
+== Extracting the image ==
+Use linaro-media-create to create a bootable QEMU image:
+{{{
+sudo ./linaro-media-create --rootfs ext3 --image_file beagle.img --binary /home/michaelh/Downloads/alpha1/linaro-natty-headless-tar-20101201-1.tar.gz --hwpack /home/michaelh/Downloads/overo/hwpack_linaro-omap3_20101109-1_armel_supported.tar.gz --swap_file 256  --dev beagle
+}}}
+
+Mount the boot partition and copy uInitrd off it:
+{{{
+sudo losetup -f --show beagle.img --offset 32256 --sizelimit 73995264
+sudo mount /dev/loop0 /mnt
+cp /mnt/uInitrd .
+}}}
+
+Strip off the 64 byte header:
+{{{
+dd if=uInitrd of=initrd.gz bs=64 skip=1
+}}}
+
+Uncompress and extract:
+{{{
+gunzip initrd.gz
+mkdir init
+cd init
+cpio -i < ../initrd
+}}}
+
+== Creating the image ==
+
+Create and compress the cpio archive:
+{{{
+find | cpio -H newc -o > ../initrd.new
+cd ..
+gzip initrd.new
+}}}
+
+Wrap up in a u-boot header:
+{{{
+mkimage -A arm -O linux -T ramdisk -C none -a 0 -e 0 -n initramfs -d initrd.new.gz uInitrd
+}}}
+
+Copy into the partition and unmount:
+{{{
+sudo cp uInitrd /mnt
+sudo umount /mnt
+}}}
+
+Run under qemu:
+{{{
+qemu-system-arm -M beagle -m 256 -sd ./beagle.img -clock unix -serial stdio
+}}}
