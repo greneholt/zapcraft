@@ -2,7 +2,7 @@
 <resources>
 
     <string name="hello">Hello World, You are an amazing device.</string>
-    <string name="app_name">Again</string>
+    <string name="app_name">Fuel Saving Device</string>
     <string name="FirstButton">Live Data</string>
     <string name="SecondButton">Optimized Route</string>
     <string name="ThirdButton">Route Comparison</string>
