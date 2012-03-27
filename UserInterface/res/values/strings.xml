@@ -8,5 +8,6 @@
     <string name="ThirdButton">Route Comparison</string>
     <string name="FourthButton">Choose Route</string>
     <string name="FifthButton">Settings</string>
+    <string name="Practice">Test</string>
 
 </resources>

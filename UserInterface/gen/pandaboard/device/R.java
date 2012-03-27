@@ -22,11 +22,13 @@ public final class R {
     }
     public static final class layout {
         public static final int main=0x7f030000;
+        public static final int optimizedroute=0x7f030001;
     }
     public static final class string {
         public static final int FifthButton=0x7f040006;
         public static final int FirstButton=0x7f040002;
         public static final int FourthButton=0x7f040005;
+        public static final int Practice=0x7f040007;
         public static final int SecondButton=0x7f040003;
         public static final int ThirdButton=0x7f040004;
         public static final int app_name=0x7f040001;
