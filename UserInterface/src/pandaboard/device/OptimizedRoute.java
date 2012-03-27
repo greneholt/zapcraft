@@ -1,6 +1,7 @@
 package pandaboard.device;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.os.Bundle;
 
 public class OptimizedRoute extends Activity {
@@ -11,6 +12,11 @@ public class OptimizedRoute extends Activity {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.optimizedroute);
 	    // TODO Auto-generated method stub
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+	    super.onConfigurationChanged(newConfig);
 	}
 
 }
