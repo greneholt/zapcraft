@@ -1,4 +1,4 @@
-package edu.mines.zapcraft.fuelbehavior;
+package edu.mines.zapcraft.FuelBehavior;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -79,15 +79,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 
         setContentView(R.layout.main);
 
-		Button sendCommand = (Button) findViewById(R.id.button1);
-		sendCommand.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View view) {
-				byte[] buffer = new byte[1];
-				buffer[0] = '0';
-				sendCommand(buffer);
-			}
-
-		});
+		hideControls();
     }
 
     @Override
@@ -160,6 +152,8 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		} catch (IOException e) {
 		} finally {
 			mFileDescriptor = null;
+			mInputStream = null;
+			mOutputStream = null;
 			mAccessory = null;
 		}
 	}
@@ -172,6 +166,10 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 			try {
 				ret = mInputStream.read(buffer);
 			} catch (IOException e) {
+				Message m = Message.obtain(mHandler, MESSAGE_STRING);
+				Log.e(TAG, "read failed", e);
+				m.obj = "IOException";
+				mHandler.sendMessage(m);
 				break;
 			}
 
@@ -201,6 +199,16 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 
 	public void showControls() {
 		setContentView(R.layout.main);
+
+		Button button1 = (Button) findViewById(R.id.button1);
+		button1.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				byte[] buffer = new byte[1];
+				buffer[0] = 48;
+				handleStringMessage("Sent command");
+				sendCommand(buffer);
+			}
+		});
 	}
 
 	public void sendCommand(byte[] command) {
