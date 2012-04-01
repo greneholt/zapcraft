@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class FuelBehaviorActivity extends Activity implements Runnable {
-	private static final String TAG = "FuelBehavior";
+	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
 
