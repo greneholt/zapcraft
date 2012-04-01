@@ -77,8 +77,6 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
-        setContentView(R.layout.main);
-
 		hideControls();
     }
 
