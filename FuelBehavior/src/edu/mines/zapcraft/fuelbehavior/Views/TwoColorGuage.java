@@ -64,12 +64,7 @@ public final class TwoColorGuage extends View {
 	private static final int maxDegrees = 110;
 
 	// hand dynamics -- all are angular expressed in F degrees
-	private boolean handInitialized = false;
 	private float handPosition = centerDegree;
-	private float handTarget = centerDegree;
-	private float handVelocity = 0.0f;
-	private float handAcceleration = 0.0f;
-	private long lastHandMoveTime = -1L;
 
 	public TwoColorGuage(Context context) {
 		super(context);
@@ -86,14 +81,13 @@ public final class TwoColorGuage extends View {
 		init();
 	}
 
-	public void setHandTarget(float temperature) {
+	public void setHandPosition(float temperature) {
 		if (temperature < minDegrees) {
 			temperature = minDegrees;
 		} else if (temperature > maxDegrees) {
 			temperature = maxDegrees;
 		}
-		handTarget = temperature;
-		handInitialized = true;
+		handPosition = temperature;
 		invalidate();
 	}
 
@@ -103,7 +97,6 @@ public final class TwoColorGuage extends View {
 		Parcelable superState = bundle.getParcelable("superState");
 		super.onRestoreInstanceState(superState);
 
-		handInitialized = bundle.getBoolean("handInitialized");
 		handPosition = bundle.getFloat("handPosition");
 	}
 
@@ -113,13 +106,12 @@ public final class TwoColorGuage extends View {
 
 		Bundle state = new Bundle();
 		state.putParcelable("superState", superState);
-		state.putBoolean("handInitialized", handInitialized);
 		state.putFloat("handPosition", handPosition);
 		return state;
 	}
 
 	private void init() {
-		setHandTarget(50.0f);
+		setHandPosition(50.0f);
 		initDrawingTools();
 	}
 
@@ -335,15 +327,13 @@ public final class TwoColorGuage extends View {
 	}
 
 	private void drawHand(Canvas canvas) {
-		if (handInitialized) {
-			float handAngle = degreeToAngle(handPosition);
-			canvas.save(Canvas.MATRIX_SAVE_FLAG);
-			canvas.rotate(handAngle, 0.5f, 0.5f);
-			canvas.drawPath(handPath, handPaint);
-			canvas.restore();
+		float handAngle = degreeToAngle(handPosition);
+		canvas.save(Canvas.MATRIX_SAVE_FLAG);
+		canvas.rotate(handAngle, 0.5f, 0.5f);
+		canvas.drawPath(handPath, handPaint);
+		canvas.restore();
 
-			canvas.drawCircle(0.5f, 0.5f, 0.01f, handScrewPaint);
-		}
+		canvas.drawCircle(0.5f, 0.5f, 0.01f, handScrewPaint);
 	}
 
 	private void drawBackground(Canvas canvas) {
@@ -366,42 +356,6 @@ public final class TwoColorGuage extends View {
 		drawHand(canvas);
 
 		canvas.restore();
-
-		if (handNeedsToMove()) {
-			moveHand();
-		}
-	}
-
-	private boolean handNeedsToMove() {
-		return Math.abs(handPosition - handTarget) > 0.01f;
-	}
-
-	private void moveHand() {
-		if (lastHandMoveTime != -1L) {
-			long currentTime = System.currentTimeMillis();
-			float delta = (currentTime - lastHandMoveTime) / 1000.0f;
-
-			float direction = Math.signum(handVelocity);
-			if (Math.abs(handVelocity) < 360.0f) {
-				handAcceleration = 50.0f * (handTarget - handPosition);
-			} else {
-				handAcceleration = 0.0f;
-			}
-			handPosition += handVelocity * delta;
-			handVelocity += handAcceleration * delta;
-			if ((handTarget - handPosition) * direction < 0.01f * direction) {
-				handPosition = handTarget;
-				handVelocity = 0.0f;
-				handAcceleration = 0.0f;
-				lastHandMoveTime = -1L;
-			} else {
-				lastHandMoveTime = System.currentTimeMillis();
-			}
-			invalidate();
-		} else {
-			lastHandMoveTime = System.currentTimeMillis();
-			moveHand();
-		}
 	}
 
 	@Override

@@ -208,7 +208,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				handleStringMessage("Sent command");
 				sendCommand(buffer);
 				TwoColorGuage guage = (TwoColorGuage) findViewById(R.id.twoColorGuage1);
-				guage.setHandTarget(70);
+				guage.setHandPosition(70);
 			}
 		});
 
@@ -216,7 +216,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				TwoColorGuage guage = (TwoColorGuage) findViewById(R.id.twoColorGuage1);
-				guage.setHandTarget(30);
+				guage.setHandPosition(30);
 			}
 		});
 	}
