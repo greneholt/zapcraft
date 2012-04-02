@@ -1,0 +1,7 @@
+The following command was used to generate the diff between the beada and unmodified kernel.
+
+diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/ ../Beada20120202/Android/omap-omapzoom/ > mods.diff
+
+If the base directories are removed from the file paths, as in kernel_mods.diff, the following command can be used to apply the patch.
+
+patch -p0 < mods.diff

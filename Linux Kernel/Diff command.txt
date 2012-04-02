@@ -1,1 +1,0 @@
-diff -rN -U 8 -x '*.git' -x '*.DS*' omap-omapzoom/ ../Beada20120202/Android/omap-omapzoom/ > mods.diff

@@ -1,0 +1,5 @@
+This is the build procedure I used to build the final kernel.
+
+make "V=1" KCFLAGS="  -fno-pic -mno-unaligned-access" ARCH=arm LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- distclean
+make "V=1" KCFLAGS="  -fno-pic -mno-unaligned-access" ARCH=arm LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- defconfig beada_unified_defconfig
+make "V=1" KCFLAGS="  -fno-pic -mno-unaligned-access" ARCH=arm LD=../android-toolchain-eabi/bin/arm-linux-androideabi-ld.bfd CROSS_COMPILE=../android-toolchain-eabi/bin/arm-linux-androideabi- uImage
