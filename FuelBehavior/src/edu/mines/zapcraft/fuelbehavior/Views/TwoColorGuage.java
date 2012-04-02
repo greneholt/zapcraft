@@ -201,7 +201,7 @@ public final class TwoColorGuage extends View {
 		logoPaint.setFilterBitmap(true);
 		logo = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.logo);
 		logoMatrix = new Matrix();
-		logoScale = (1.0f / logo.getWidth()) * 0.3f;;
+		logoScale = (1.0f / logo.getWidth()) * 0.3f;
 		logoMatrix.setScale(logoScale, logoScale);
 
 		handPaint = new Paint();
@@ -383,7 +383,7 @@ public final class TwoColorGuage extends View {
 
 			float direction = Math.signum(handVelocity);
 			if (Math.abs(handVelocity) < 360.0f) {
-				handAcceleration = 70.0f * (handTarget - handPosition);
+				handAcceleration = 50.0f * (handTarget - handPosition);
 			} else {
 				handAcceleration = 0.0f;
 			}
