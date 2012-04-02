@@ -4,23 +4,35 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <edu.mines.zapcraft.FuelBehavior.Views.TwoColorGuage
-        android:id="@+id/twoColorGuage1"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0.90" />
+        android:layout_weight="0.73" >
+        
+        <TextView
+            android:id="@+id/output_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="4.04"
+            android:text="@string/hello" />
 
-    <TextView
-        android:id="@+id/output_text"
-        android:layout_width="459dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.90"
-        android:text="@string/hello" />
+	    <edu.mines.zapcraft.FuelBehavior.Views.TwoColorGuage
+	        android:id="@+id/twoColorGuage1"
+	        android:layout_width="316dp"
+	        android:layout_height="match_parent" />
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/send_command_string" />
+    
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set Dial" />
 
 </LinearLayout>

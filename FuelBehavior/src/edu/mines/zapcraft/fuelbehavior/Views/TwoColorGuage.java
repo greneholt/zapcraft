@@ -1,7 +1,5 @@
 package edu.mines.zapcraft.FuelBehavior.Views;
 
-import edu.mines.zapcraft.FuelBehavior.R;
-import edu.mines.zapcraft.FuelBehavior.R.drawable;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,24 +15,16 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import edu.mines.zapcraft.FuelBehavior.R;
 
-import java.util.List;
-
-public final class TwoColorGuage extends View implements SensorEventListener {
+public final class TwoColorGuage extends View {
 
 	private static final String TAG = TwoColorGuage.class.getSimpleName();
-
-	private Handler handler;
 
 	// drawing tools
 	private RectF rimRect;
@@ -81,7 +71,6 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 	private float handAcceleration = 0.0f;
 	private long lastHandMoveTime = -1L;
 
-
 	public TwoColorGuage(Context context) {
 		super(context);
 		init();
@@ -97,16 +86,15 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 		init();
 	}
 
-	@Override
-	protected void onAttachedToWindow() {
-		super.onAttachedToWindow();
-		attachToSensor();
-	}
-
-	@Override
-	protected void onDetachedFromWindow() {
-		detachFromSensor();
-		super.onDetachedFromWindow();
+	public void setHandTarget(float temperature) {
+		if (temperature < minDegrees) {
+			temperature = minDegrees;
+		} else if (temperature > maxDegrees) {
+			temperature = maxDegrees;
+		}
+		handTarget = temperature;
+		handInitialized = true;
+		invalidate();
 	}
 
 	@Override
@@ -117,10 +105,6 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 
 		handInitialized = bundle.getBoolean("handInitialized");
 		handPosition = bundle.getFloat("handPosition");
-		handTarget = bundle.getFloat("handTarget");
-		handVelocity = bundle.getFloat("handVelocity");
-		handAcceleration = bundle.getFloat("handAcceleration");
-		lastHandMoveTime = bundle.getLong("lastHandMoveTime");
 	}
 
 	@Override
@@ -131,42 +115,16 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 		state.putParcelable("superState", superState);
 		state.putBoolean("handInitialized", handInitialized);
 		state.putFloat("handPosition", handPosition);
-		state.putFloat("handTarget", handTarget);
-		state.putFloat("handVelocity", handVelocity);
-		state.putFloat("handAcceleration", handAcceleration);
-		state.putLong("lastHandMoveTime", lastHandMoveTime);
 		return state;
 	}
 
 	private void init() {
-		handler = new Handler();
-
+		setHandTarget(50.0f);
 		initDrawingTools();
 	}
 
 	private String getTitle() {
 		return "mindtherobot.com";
-	}
-
-	private SensorManager getSensorManager() {
-		return (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
-	}
-
-	private void attachToSensor() {
-		SensorManager sensorManager = getSensorManager();
-
-		List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_TEMPERATURE);
-		if (sensors.size() > 0) {
-			Sensor sensor = sensors.get(0);
-			sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST, handler);
-		} else {
-			Log.e(TAG, "No temperature sensor found");
-		}
-	}
-
-	private void detachFromSensor() {
-		SensorManager sensorManager = getSensorManager();
-		sensorManager.unregisterListener(this);
 	}
 
 	private void initDrawingTools() {
@@ -414,6 +372,38 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 		}
 	}
 
+	private boolean handNeedsToMove() {
+		return Math.abs(handPosition - handTarget) > 0.01f;
+	}
+
+	private void moveHand() {
+		if (lastHandMoveTime != -1L) {
+			long currentTime = System.currentTimeMillis();
+			float delta = (currentTime - lastHandMoveTime) / 1000.0f;
+
+			float direction = Math.signum(handVelocity);
+			if (Math.abs(handVelocity) < 360.0f) {
+				handAcceleration = 70.0f * (handTarget - handPosition);
+			} else {
+				handAcceleration = 0.0f;
+			}
+			handPosition += handVelocity * delta;
+			handVelocity += handAcceleration * delta;
+			if ((handTarget - handPosition) * direction < 0.01f * direction) {
+				handPosition = handTarget;
+				handVelocity = 0.0f;
+				handAcceleration = 0.0f;
+				lastHandMoveTime = -1L;
+			} else {
+				lastHandMoveTime = System.currentTimeMillis();
+			}
+			invalidate();
+		} else {
+			lastHandMoveTime = System.currentTimeMillis();
+			moveHand();
+		}
+	}
+
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.d(TAG, "Size changed to " + w + "x" + h);
@@ -438,76 +428,11 @@ public final class TwoColorGuage extends View implements SensorEventListener {
 		drawTitle(backgroundCanvas);
 	}
 
-	private boolean handNeedsToMove() {
-		return Math.abs(handPosition - handTarget) > 0.01f;
-	}
-
-	private void moveHand() {
-		if (! handNeedsToMove()) {
-			return;
-		}
-
-		if (lastHandMoveTime != -1L) {
-			long currentTime = System.currentTimeMillis();
-			float delta = (currentTime - lastHandMoveTime) / 1000.0f;
-
-			float direction = Math.signum(handVelocity);
-			if (Math.abs(handVelocity) < 90.0f) {
-				handAcceleration = 5.0f * (handTarget - handPosition);
-			} else {
-				handAcceleration = 0.0f;
-			}
-			handPosition += handVelocity * delta;
-			handVelocity += handAcceleration * delta;
-			if ((handTarget - handPosition) * direction < 0.01f * direction) {
-				handPosition = handTarget;
-				handVelocity = 0.0f;
-				handAcceleration = 0.0f;
-				lastHandMoveTime = -1L;
-			} else {
-				lastHandMoveTime = System.currentTimeMillis();
-			}
-			invalidate();
-		} else {
-			lastHandMoveTime = System.currentTimeMillis();
-			moveHand();
-		}
-	}
-
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-	}
-
-	@Override
-	public void onSensorChanged(SensorEvent sensorEvent) {
-		if (sensorEvent.values.length > 0) {
-			float temperatureC = sensorEvent.values[0];
-			//Log.i(TAG, "*** Temperature: " + temperatureC);
-
-			float temperatureF = (9.0f / 5.0f) * temperatureC + 32.0f;
-			setHandTarget(temperatureF);
-		} else {
-			Log.w(TAG, "Empty sensor event received");
-		}
-	}
-
 	private float getRelativeTemperaturePosition() {
 		if (handPosition < centerDegree) {
 			return - (centerDegree - handPosition) / (float) (centerDegree - minDegrees);
 		} else {
 			return (handPosition - centerDegree) / (float) (maxDegrees - centerDegree);
 		}
-	}
-
-	private void setHandTarget(float temperature) {
-		if (temperature < minDegrees) {
-			temperature = minDegrees;
-		} else if (temperature > maxDegrees) {
-			temperature = maxDegrees;
-		}
-		handTarget = temperature;
-		handInitialized = true;
-		invalidate();
 	}
 }
