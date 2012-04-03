@@ -1,14 +1,11 @@
 package edu.mines.zapcraft.FuelBehavior.Views;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LightingColorFilter;
 import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
@@ -22,17 +19,19 @@ import android.util.Log;
 import android.view.View;
 import edu.mines.zapcraft.FuelBehavior.R;
 
-public final class TwoColorGuage extends View {
+public final class Gauge extends View {
 
-	private static final String TAG = TwoColorGuage.class.getSimpleName();
+	private static final String TAG = Gauge.class.getSimpleName();
 
 	// drawing tools
 	private RectF rimRect;
 	private Paint rimPaint;
+	private RectF outerRimRect;
+	private RectF innerRimRect;
+
 	private Paint rimCirclePaint;
 
 	private RectF faceRect;
-	private Bitmap faceTexture;
 	private Paint facePaint;
 	private Paint rimShadowPaint;
 
@@ -42,52 +41,56 @@ public final class TwoColorGuage extends View {
 	private Paint titlePaint;
 	private Path titlePath;
 
-	private Paint logoPaint;
-	private Bitmap logo;
-	private Matrix logoMatrix;
-	private float logoScale;
-
 	private Paint handPaint;
 	private Path handPath;
 	private Paint handScrewPaint;
 
-	private Paint backgroundPaint;
+	private Paint cachedPaint;
 	// end drawing tools
 
-	private Bitmap background; // holds the cached static part
+	private Bitmap cached; // holds the cached static part
 
 	// scale configuration
 	private static final int totalNicks = 100;
-	private static final float degreesPerNick = 360.0f / totalNicks;
-	private static final int centerDegree = 40; // the one in the top center (12 o'clock)
-	private static final int minDegrees = -30;
-	private static final int maxDegrees = 110;
+	private static final int minDegrees = -140;
+	private static final int maxDegrees = 140;
+	private static final int degreeRange = maxDegrees - minDegrees;
+	private static final float degreesPerNick = (float) degreeRange / totalNicks;
+	private static final int minValue = 0;
+	private static final int maxValue = 100;
+	private static final int valueRange = maxValue - minValue;
+	private static final float valuesPerNick = (float) valueRange / totalNicks;
+	private static final float degreesPerValue = (float) degreeRange / valueRange;
 
 	// hand dynamics -- all are angular expressed in F degrees
-	private float handPosition = centerDegree;
+	private float handValue = minValue;
 
-	public TwoColorGuage(Context context) {
+	private String title = "ZapCraft";
+
+	private Paint handEdgePaint;
+
+	public Gauge(Context context) {
 		super(context);
-		init();
+		init(context, null);
 	}
 
-	public TwoColorGuage(Context context, AttributeSet attrs) {
+	public Gauge(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		init();
+		init(context, attrs);
 	}
 
-	public TwoColorGuage(Context context, AttributeSet attrs, int defStyle) {
+	public Gauge(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		init();
+		init(context, attrs);
 	}
 
-	public void setHandPosition(float temperature) {
-		if (temperature < minDegrees) {
-			temperature = minDegrees;
-		} else if (temperature > maxDegrees) {
-			temperature = maxDegrees;
+	public void setHandValue(float value) {
+		if (value < minValue) {
+			value = minValue;
+		} else if (value > maxValue) {
+			value = maxValue;
 		}
-		handPosition = temperature;
+		handValue = value;
 		invalidate();
 	}
 
@@ -97,7 +100,7 @@ public final class TwoColorGuage extends View {
 		Parcelable superState = bundle.getParcelable("superState");
 		super.onRestoreInstanceState(superState);
 
-		handPosition = bundle.getFloat("handPosition");
+		handValue = bundle.getFloat("handPosition");
 	}
 
 	@Override
@@ -106,29 +109,45 @@ public final class TwoColorGuage extends View {
 
 		Bundle state = new Bundle();
 		state.putParcelable("superState", superState);
-		state.putFloat("handPosition", handPosition);
+		state.putFloat("handPosition", handValue);
 		return state;
 	}
 
-	private void init() {
-		setHandPosition(50.0f);
+	private void init(Context context, AttributeSet attrs) {
+		// Get the properties from the resource file.
+		if (context != null && attrs != null){
+			TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Gauge);
+			String title       = a.getString(R.styleable.Gauge_title);
+			if (title != null) this.title = title;
+		}
+
 		initDrawingTools();
 	}
 
-	private String getTitle() {
-		return "mindtherobot.com";
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
 	private void initDrawingTools() {
+		float rimSize = 0.02f;
+
 		rimRect = new RectF(0.1f, 0.1f, 0.9f, 0.9f);
 
 		// the linear gradient is a bit skewed for realism
 		rimPaint = new Paint();
-		rimPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+		rimPaint.setAntiAlias(true);
+		rimPaint.setStyle(Paint.Style.STROKE);
 		rimPaint.setShader(new LinearGradient(0.40f, 0.0f, 0.60f, 1.0f,
 										   Color.rgb(0xf0, 0xf5, 0xf0),
 										   Color.rgb(0x30, 0x31, 0x30),
 										   Shader.TileMode.CLAMP));
+		rimPaint.setStrokeWidth(rimSize);
+
+		outerRimRect = new RectF();
+		outerRimRect.set(rimRect.left - rimSize/2, rimRect.top - rimSize/2, rimRect.right + rimSize/2, rimRect.bottom + rimSize/2);
+
+		innerRimRect = new RectF();
+		innerRimRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2, rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
 
 		rimCirclePaint = new Paint();
 		rimCirclePaint.setAntiAlias(true);
@@ -136,26 +155,17 @@ public final class TwoColorGuage extends View {
 		rimCirclePaint.setColor(Color.argb(0x4f, 0x33, 0x36, 0x33));
 		rimCirclePaint.setStrokeWidth(0.005f);
 
-		float rimSize = 0.02f;
 		faceRect = new RectF();
-		faceRect.set(rimRect.left + rimSize, rimRect.top + rimSize,
-			     rimRect.right - rimSize, rimRect.bottom - rimSize);
+		faceRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2,
+			     rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
 
-		faceTexture = BitmapFactory.decodeResource(getContext().getResources(),
-				   R.drawable.plastic);
-		BitmapShader paperShader = new BitmapShader(faceTexture,
-												    Shader.TileMode.MIRROR,
-												    Shader.TileMode.MIRROR);
-		Matrix paperMatrix = new Matrix();
 		facePaint = new Paint();
-		facePaint.setFilterBitmap(true);
-		paperMatrix.setScale(1.0f / faceTexture.getWidth(),
-							 1.0f / faceTexture.getHeight());
-		paperShader.setLocalMatrix(paperMatrix);
+		facePaint.setAntiAlias(true);
 		facePaint.setStyle(Paint.Style.FILL);
-		facePaint.setShader(paperShader);
+		facePaint.setColor(Color.rgb(0xdd, 0x00, 0xbb));
 
 		rimShadowPaint = new Paint();
+		rimShadowPaint.setAntiAlias(true);
 		rimShadowPaint.setShader(new RadialGradient(0.5f, 0.5f, faceRect.width() / 2.0f,
 				   new int[] { 0x00000000, 0x00000500, 0x50000500 },
 				   new float[] { 0.96f, 0.96f, 0.99f },
@@ -164,13 +174,12 @@ public final class TwoColorGuage extends View {
 
 		scalePaint = new Paint();
 		scalePaint.setStyle(Paint.Style.STROKE);
-		scalePaint.setColor(0x9f004d0f);
+		scalePaint.setColor(Color.BLACK);
 		scalePaint.setStrokeWidth(0.005f);
 		scalePaint.setAntiAlias(true);
 
 		scalePaint.setTextSize(0.045f);
 		scalePaint.setTypeface(Typeface.SANS_SERIF);
-		scalePaint.setTextScaleX(0.8f);
 		scalePaint.setTextAlign(Paint.Align.CENTER);
 
 		float scalePosition = 0.10f;
@@ -179,7 +188,7 @@ public final class TwoColorGuage extends View {
 					  faceRect.right - scalePosition, faceRect.bottom - scalePosition);
 
 		titlePaint = new Paint();
-		titlePaint.setColor(0xaf946109);
+		titlePaint.setColor(Color.BLACK);
 		titlePaint.setAntiAlias(true);
 		titlePaint.setTypeface(Typeface.DEFAULT_BOLD);
 		titlePaint.setTextAlign(Paint.Align.CENTER);
@@ -189,35 +198,34 @@ public final class TwoColorGuage extends View {
 		titlePath = new Path();
 		titlePath.addArc(new RectF(0.24f, 0.24f, 0.76f, 0.76f), -180.0f, -180.0f);
 
-		logoPaint = new Paint();
-		logoPaint.setFilterBitmap(true);
-		logo = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.logo);
-		logoMatrix = new Matrix();
-		logoScale = (1.0f / logo.getWidth()) * 0.3f;
-		logoMatrix.setScale(logoScale, logoScale);
-
 		handPaint = new Paint();
 		handPaint.setAntiAlias(true);
-		handPaint.setColor(0xff392f2c);
+		handPaint.setColor(Color.WHITE);
 		handPaint.setShadowLayer(0.01f, -0.005f, -0.005f, 0x7f000000);
 		handPaint.setStyle(Paint.Style.FILL);
+
+		handEdgePaint = new Paint();
+		handEdgePaint.setAntiAlias(true);
+		handEdgePaint.setStyle(Paint.Style.STROKE);
+		handEdgePaint.setColor(Color.BLACK);
+		handEdgePaint.setStrokeWidth(0.005f);
 
 		handPath = new Path();
 		handPath.moveTo(0.5f, 0.5f + 0.2f);
 		handPath.lineTo(0.5f - 0.010f, 0.5f + 0.2f - 0.007f);
-		handPath.lineTo(0.5f - 0.002f, 0.5f - 0.32f);
-		handPath.lineTo(0.5f + 0.002f, 0.5f - 0.32f);
+		handPath.lineTo(0.5f - 0.005f, 0.5f - 0.32f);
+		handPath.lineTo(0.5f + 0.005f, 0.5f - 0.32f);
 		handPath.lineTo(0.5f + 0.010f, 0.5f + 0.2f - 0.007f);
 		handPath.lineTo(0.5f, 0.5f + 0.2f);
 		handPath.addCircle(0.5f, 0.5f, 0.025f, Path.Direction.CW);
 
 		handScrewPaint = new Paint();
 		handScrewPaint.setAntiAlias(true);
-		handScrewPaint.setColor(0xff493f3c);
+		handScrewPaint.setColor(Color.rgb(0x44, 0x44, 0x44));
 		handScrewPaint.setStyle(Paint.Style.FILL);
 
-		backgroundPaint = new Paint();
-		backgroundPaint.setFilterBitmap(true);
+		cachedPaint = new Paint();
+		cachedPaint.setFilterBitmap(true);
 	}
 
 	@Override
@@ -256,34 +264,35 @@ public final class TwoColorGuage extends View {
 		// first, draw the metallic body
 		canvas.drawOval(rimRect, rimPaint);
 		// now the outer rim circle
-		canvas.drawOval(rimRect, rimCirclePaint);
-	}
-
-	private void drawFace(Canvas canvas) {
-		canvas.drawOval(faceRect, facePaint);
+		canvas.drawOval(outerRimRect, rimCirclePaint);
 		// draw the inner rim circle
-		canvas.drawOval(faceRect, rimCirclePaint);
+		canvas.drawOval(innerRimRect, rimCirclePaint);
 		// draw the rim shadow inside the face
-		canvas.drawOval(faceRect, rimShadowPaint);
+		canvas.drawOval(innerRimRect, rimShadowPaint);
 	}
 
 	private void drawScale(Canvas canvas) {
 		canvas.drawOval(scaleRect, scalePaint);
 
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
-		for (int i = 0; i < totalNicks; ++i) {
-			float y1 = scaleRect.top;
-			float y2 = y1 - 0.020f;
 
-			canvas.drawLine(0.5f, y1, 0.5f, y2, scalePaint);
+		canvas.rotate(minDegrees, 0.5f, 0.5f);
+
+		for (int i = 0; i <= totalNicks; ++i) {
+			float y1 = scaleRect.top;
+			float y2 = y1 - 0.015f;
 
 			if (i % 5 == 0) {
-				int value = nickToDegree(i);
+				canvas.drawLine(0.5f, y1, 0.5f, y2 - 0.015f, scalePaint);
 
-				if (value >= minDegrees && value <= maxDegrees) {
+				int value = (int)(i * valuesPerNick + minValue);
+
+				if (value >= minValue && value <= maxValue) {
 					String valueString = Integer.toString(value);
-					canvas.drawText(valueString, 0.5f, y2 - 0.015f, scalePaint);
+					canvas.drawText(valueString, 0.5f, y2 - 0.02f, scalePaint);
 				}
+			} else {
+				canvas.drawLine(0.5f, y1, 0.5f, y2, scalePaint);
 			}
 
 			canvas.rotate(degreesPerNick, 0.5f, 0.5f);
@@ -291,68 +300,57 @@ public final class TwoColorGuage extends View {
 		canvas.restore();
 	}
 
-	private int nickToDegree(int nick) {
-		int rawDegree = ((nick < totalNicks / 2) ? nick : (nick - totalNicks)) * 2;
-		int shiftedDegree = rawDegree + centerDegree;
-		return shiftedDegree;
-	}
-
-	private float degreeToAngle(float degree) {
-		return (degree - centerDegree) / 2.0f * degreesPerNick;
-	}
-
 	private void drawTitle(Canvas canvas) {
-		String title = getTitle();
 		canvas.drawTextOnPath(title, titlePath, 0.0f,0.0f, titlePaint);
 	}
 
-	private void drawLogo(Canvas canvas) {
-		canvas.save(Canvas.MATRIX_SAVE_FLAG);
-		canvas.translate(0.5f - logo.getWidth() * logoScale / 2.0f,
-						 0.5f - logo.getHeight() * logoScale / 2.0f);
-
-		int color = 0x00000000;
-		float position = getRelativeTemperaturePosition();
-		if (position < 0) {
-			color |= (int) ((0xf0) * -position); // blue
-		} else {
-			color |= ((int) ((0xf0) * position)) << 16; // red
-		}
-		//Log.d(TAG, "*** " + Integer.toHexString(color));
-		LightingColorFilter logoFilter = new LightingColorFilter(0xff338822, color);
-		logoPaint.setColorFilter(logoFilter);
-
-		canvas.drawBitmap(logo, logoMatrix, logoPaint);
-		canvas.restore();
+	private float valueToAngle(float value) {
+		return (value - minValue) * degreesPerValue + minDegrees;
 	}
 
 	private void drawHand(Canvas canvas) {
-		float handAngle = degreeToAngle(handPosition);
+		float handAngle = valueToAngle(handValue);
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
 		canvas.rotate(handAngle, 0.5f, 0.5f);
+		canvas.drawPath(handPath, handEdgePaint);
 		canvas.drawPath(handPath, handPaint);
 		canvas.restore();
 
 		canvas.drawCircle(0.5f, 0.5f, 0.01f, handScrewPaint);
 	}
 
-	private void drawBackground(Canvas canvas) {
-		if (background == null) {
+	private void drawFace(Canvas canvas) {
+		int color = Color.rgb((int)(0xff * getRelativePosition()),
+			0xff - (int)(0xff * getRelativePosition()), 0x00);
+
+		facePaint.setColor(color);
+		canvas.drawOval(faceRect, facePaint);
+	}
+
+	private void drawCached(Canvas canvas) {
+		if (cached == null) {
 			Log.w(TAG, "Background not created");
 		} else {
-			canvas.drawBitmap(background, 0, 0, backgroundPaint);
+			canvas.drawBitmap(cached, 0, 0, cachedPaint);
 		}
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		drawBackground(canvas);
-
 		float scale = (float) getWidth();
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
 		canvas.scale(scale, scale);
 
-		drawLogo(canvas);
+		drawFace(canvas);
+
+		canvas.restore();
+
+		drawCached(canvas);
+
+		scale = (float) getWidth();
+		canvas.save(Canvas.MATRIX_SAVE_FLAG);
+		canvas.scale(scale, scale);
+
 		drawHand(canvas);
 
 		canvas.restore();
@@ -362,31 +360,31 @@ public final class TwoColorGuage extends View {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.d(TAG, "Size changed to " + w + "x" + h);
 
-		regenerateBackground();
+		regenerateCache();
 	}
 
-	private void regenerateBackground() {
+	private void regenerateCache() {
 		// free the old bitmap
-		if (background != null) {
-			background.recycle();
+		if (cached != null) {
+			cached.recycle();
 		}
 
-		background = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
-		Canvas backgroundCanvas = new Canvas(background);
+		cached = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+		Canvas cachedCanvas = new Canvas(cached);
 		float scale = (float) getWidth();
-		backgroundCanvas.scale(scale, scale);
+		cachedCanvas.scale(scale, scale);
 
-		drawRim(backgroundCanvas);
-		drawFace(backgroundCanvas);
-		drawScale(backgroundCanvas);
-		drawTitle(backgroundCanvas);
+		drawRim(cachedCanvas);
+		drawScale(cachedCanvas);
+		drawTitle(cachedCanvas);
 	}
 
-	private float getRelativeTemperaturePosition() {
-		if (handPosition < centerDegree) {
-			return - (centerDegree - handPosition) / (float) (centerDegree - minDegrees);
-		} else {
-			return (handPosition - centerDegree) / (float) (maxDegrees - centerDegree);
-		}
+	/**
+	 * Returns the position of the hand as a float between 0.0 and 1.0.
+	 *
+	 * @return the position of the hand as a float between 0.0 and 1.0.
+	 */
+	private float getRelativePosition() {
+		return (float) (handValue - minValue) / valueRange;
 	}
 }

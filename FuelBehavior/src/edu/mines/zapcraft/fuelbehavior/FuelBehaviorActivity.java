@@ -19,7 +19,7 @@ import android.widget.TextView;
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
 
-import edu.mines.zapcraft.FuelBehavior.Views.TwoColorGuage;
+import edu.mines.zapcraft.FuelBehavior.Views.Gauge;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -207,16 +207,16 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				buffer[0] = 48;
 				handleStringMessage("Sent command");
 				sendCommand(buffer);
-				TwoColorGuage guage = (TwoColorGuage) findViewById(R.id.twoColorGuage1);
-				guage.setHandPosition(70);
+				Gauge guage = (Gauge) findViewById(R.id.gauge1);
+				guage.setHandValue(70);
 			}
 		});
 
 		Button button2 = (Button) findViewById(R.id.button2);
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				TwoColorGuage guage = (TwoColorGuage) findViewById(R.id.twoColorGuage1);
-				guage.setHandPosition(30);
+				Gauge guage = (Gauge) findViewById(R.id.gauge1);
+				guage.setHandValue(30);
 			}
 		});
 	}
