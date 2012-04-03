@@ -130,35 +130,15 @@ public final class Gauge extends View {
 	}
 
 	private void initDrawingTools() {
-		float rimSize = 0.02f;
-
-		rimRect = new RectF(0.1f, 0.1f, 0.9f, 0.9f);
-
 		// the linear gradient is a bit skewed for realism
 		rimPaint = new Paint();
 		rimPaint.setAntiAlias(true);
 		rimPaint.setStyle(Paint.Style.STROKE);
-		rimPaint.setShader(new LinearGradient(0.40f, 0.0f, 0.60f, 1.0f,
-										   Color.rgb(0xf0, 0xf5, 0xf0),
-										   Color.rgb(0x30, 0x31, 0x30),
-										   Shader.TileMode.CLAMP));
-		rimPaint.setStrokeWidth(rimSize);
-
-		outerRimRect = new RectF();
-		outerRimRect.set(rimRect.left - rimSize/2, rimRect.top - rimSize/2, rimRect.right + rimSize/2, rimRect.bottom + rimSize/2);
-
-		innerRimRect = new RectF();
-		innerRimRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2, rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
 
 		rimCirclePaint = new Paint();
 		rimCirclePaint.setAntiAlias(true);
 		rimCirclePaint.setStyle(Paint.Style.STROKE);
 		rimCirclePaint.setColor(Color.argb(0x4f, 0x33, 0x36, 0x33));
-		rimCirclePaint.setStrokeWidth(0.005f);
-
-		faceRect = new RectF();
-		faceRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2,
-			     rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
 
 		facePaint = new Paint();
 		facePaint.setAntiAlias(true);
@@ -167,64 +147,30 @@ public final class Gauge extends View {
 
 		rimShadowPaint = new Paint();
 		rimShadowPaint.setAntiAlias(true);
-		rimShadowPaint.setShader(new RadialGradient(0.5f, 0.5f, faceRect.width() / 2.0f,
-				   new int[] { 0x00000000, 0x00000500, 0x50000500 },
-				   new float[] { 0.96f, 0.96f, 0.99f },
-				   Shader.TileMode.MIRROR));
 		rimShadowPaint.setStyle(Paint.Style.FILL);
 
 		scalePaint = new Paint();
 		scalePaint.setStyle(Paint.Style.STROKE);
 		scalePaint.setColor(Color.BLACK);
-		scalePaint.setStrokeWidth(0.005f);
 		scalePaint.setAntiAlias(true);
-
-		scalePaint.setTextSize(0.045f);
 		scalePaint.setTypeface(Typeface.SANS_SERIF);
 		scalePaint.setTextAlign(Paint.Align.CENTER);
-
-		float scalePosition = 0.10f;
-		scaleRect = new RectF();
-		scaleRect.set(faceRect.left + scalePosition, faceRect.top + scalePosition,
-					  faceRect.right - scalePosition, faceRect.bottom - scalePosition);
 
 		titlePaint = new Paint();
 		titlePaint.setColor(Color.BLACK);
 		titlePaint.setAntiAlias(true);
 		titlePaint.setTypeface(Typeface.DEFAULT_BOLD);
 		titlePaint.setTextAlign(Paint.Align.CENTER);
-		titlePaint.setTextSize(0.05f);
-		titlePaint.setTextScaleX(0.8f);
-
-		titlePath = new Path();
-		titlePath.addArc(new RectF(0.24f, 0.24f, 0.76f, 0.76f), -180.0f, -180.0f);
 
 		handPaint = new Paint();
 		handPaint.setAntiAlias(true);
 		handPaint.setColor(Color.BLACK);
-		handPaint.setShadowLayer(0.01f, -0.005f, -0.005f, 0x7f000000);
 		handPaint.setStyle(Paint.Style.FILL);
-
-		handPath = new Path();
-		handPath.moveTo(0.5f, 0.5f + 0.2f);
-		handPath.lineTo(0.5f - 0.010f, 0.5f + 0.2f - 0.007f);
-		handPath.lineTo(0.5f - 0.008f, 0.5f - 0.32f);
-		handPath.lineTo(0.5f + 0.008f, 0.5f - 0.32f);
-		handPath.lineTo(0.5f + 0.010f, 0.5f + 0.2f - 0.007f);
-		handPath.lineTo(0.5f, 0.5f + 0.2f);
-		handPath.addCircle(0.5f, 0.5f, 0.025f, Path.Direction.CW);
 
 		handLinePaint = new Paint();
 		handLinePaint.setAntiAlias(true);
 		handLinePaint.setStyle(Paint.Style.FILL);
 		handLinePaint.setColor(Color.WHITE);
-
-		handLinePath = new Path();
-		handLinePath.moveTo(0.5f + 0.004f, 0.5f - 0.1f);
-		handLinePath.lineTo(0.5f - 0.004f, 0.5f - 0.1f);
-		handLinePath.lineTo(0.5f - 0.003f, 0.5f - 0.315f);
-		handLinePath.lineTo(0.5f + 0.003f, 0.5f - 0.315f);
-		handLinePath.lineTo(0.5f + 0.004f, 0.5f - 0.1f);
 
 		handScrewPaint = new Paint();
 		handScrewPaint.setAntiAlias(true);
@@ -279,36 +225,39 @@ public final class Gauge extends View {
 	}
 
 	private void drawScale(Canvas canvas) {
+		float w = getWidth();
+		float center = 0.5f*w;
+
 		canvas.drawOval(scaleRect, scalePaint);
 
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
 
-		canvas.rotate(minDegrees, 0.5f, 0.5f);
+		canvas.rotate(minDegrees, center, center);
 
 		for (int i = 0; i <= totalNicks; ++i) {
 			float y1 = scaleRect.top;
-			float y2 = y1 - 0.015f;
+			float y2 = y1 - 0.015f*w;
 
 			if (i % 5 == 0) {
-				canvas.drawLine(0.5f, y1, 0.5f, y2 - 0.015f, scalePaint);
+				canvas.drawLine(center, y1, center, y2 - 0.015f*w, scalePaint);
 
 				int value = (int)(i * valuesPerNick + minValue);
 
 				if (value >= minValue && value <= maxValue) {
 					String valueString = Integer.toString(value);
-					canvas.drawText(valueString, 0.5f, y2 - 0.02f, scalePaint);
+					canvas.drawText(valueString, center, y2 - 0.02f*w, scalePaint);
 				}
 			} else {
-				canvas.drawLine(0.5f, y1, 0.5f, y2, scalePaint);
+				canvas.drawLine(center, y1, center, y2, scalePaint);
 			}
 
-			canvas.rotate(degreesPerNick, 0.5f, 0.5f);
+			canvas.rotate(degreesPerNick, center, center);
 		}
 		canvas.restore();
 	}
 
 	private void drawTitle(Canvas canvas) {
-		canvas.drawTextOnPath(title, titlePath, 0.0f,0.0f, titlePaint);
+		canvas.drawTextOnPath(title, titlePath, 0.0f, 0.0f, titlePaint);
 	}
 
 	private float valueToAngle(float value) {
@@ -316,13 +265,14 @@ public final class Gauge extends View {
 	}
 
 	private void drawHand(Canvas canvas) {
+		float w = getWidth();
 		float handAngle = valueToAngle(handValue);
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
-		canvas.rotate(handAngle, 0.5f, 0.5f);
+		canvas.rotate(handAngle, 0.5f*w, 0.5f*w);
 		canvas.drawPath(handPath, handPaint);
 		canvas.drawPath(handLinePath, handLinePaint);
 		canvas.restore();
-		canvas.drawCircle(0.5f, 0.5f, 0.01f, handScrewPaint);
+		canvas.drawCircle(0.5f*w, 0.5f*w, 0.01f*w, handScrewPaint);
 	}
 
 	private void drawFace(Canvas canvas) {
@@ -343,27 +293,74 @@ public final class Gauge extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		float scale = (float) getWidth();
-		canvas.save(Canvas.MATRIX_SAVE_FLAG);
-		canvas.scale(scale, scale);
-
 		drawFace(canvas);
-
-		canvas.restore();
 
 		drawCached(canvas);
 
-		canvas.save(Canvas.MATRIX_SAVE_FLAG);
-		canvas.scale(scale, scale);
-
 		drawHand(canvas);
-
-		canvas.restore();
 	}
 
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		Log.d(TAG, "Size changed to " + w + "x" + h);
+
+		float rimSize = 0.02f*w;
+
+		rimRect = new RectF(0.1f*w, 0.1f*w, 0.9f*w, 0.9f*w);
+
+		outerRimRect = new RectF();
+		outerRimRect.set(rimRect.left - rimSize/2, rimRect.top - rimSize/2, rimRect.right + rimSize/2, rimRect.bottom + rimSize/2);
+
+		innerRimRect = new RectF();
+		innerRimRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2, rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
+
+		faceRect = new RectF();
+		faceRect.set(rimRect.left + rimSize/2, rimRect.top + rimSize/2,
+			     rimRect.right - rimSize/2, rimRect.bottom - rimSize/2);
+
+		float scalePosition = 0.10f*w;
+		scaleRect = new RectF();
+		scaleRect.set(faceRect.left + scalePosition, faceRect.top + scalePosition,
+					  faceRect.right - scalePosition, faceRect.bottom - scalePosition);
+
+		titlePath = new Path();
+		titlePath.addArc(new RectF(0.24f*w, 0.24f*w, 0.76f*w, 0.76f*w), -180.0f, -180.0f);
+
+		handPath = new Path();
+		handPath.moveTo(0.5f*w, (0.5f + 0.2f)*w);
+		handPath.lineTo((0.5f - 0.010f)*w, (0.5f + 0.2f - 0.007f)*w);
+		handPath.lineTo((0.5f - 0.008f)*w, (0.5f - 0.32f)*w);
+		handPath.lineTo((0.5f + 0.008f)*w, (0.5f - 0.32f)*w);
+		handPath.lineTo((0.5f + 0.010f)*w, (0.5f + 0.2f - 0.007f)*w);
+		handPath.lineTo(0.5f*w, (0.5f + 0.2f)*w);
+		handPath.addCircle(0.5f*w, 0.5f*w, 0.025f*w, Path.Direction.CW);
+
+		handLinePath = new Path();
+		handLinePath.moveTo((0.5f + 0.004f)*w, (0.5f - 0.1f)*w);
+		handLinePath.lineTo((0.5f - 0.004f)*w, (0.5f - 0.1f)*w);
+		handLinePath.lineTo((0.5f - 0.003f)*w, (0.5f - 0.315f)*w);
+		handLinePath.lineTo((0.5f + 0.003f)*w, (0.5f - 0.315f)*w);
+		handLinePath.lineTo((0.5f + 0.004f)*w, (0.5f - 0.1f)*w);
+
+		rimPaint.setShader(new LinearGradient(0.40f*w, 0.0f*w, 0.60f*w, 1.0f*w,
+										   Color.rgb(0xf0, 0xf5, 0xf0),
+										   Color.rgb(0x30, 0x31, 0x30),
+										   Shader.TileMode.CLAMP));
+		rimPaint.setStrokeWidth(rimSize);
+
+		rimCirclePaint.setStrokeWidth(0.005f*w);
+
+		rimShadowPaint.setShader(new RadialGradient(0.5f*w, 0.5f*w, faceRect.width() / 2.0f,
+				   new int[] { 0x00000000, 0x00000500, 0x50000500 },
+				   new float[] { 0.96f*w, 0.96f*w, 0.99f*w },
+				   Shader.TileMode.MIRROR));
+
+		scalePaint.setStrokeWidth(0.005f*w);
+		scalePaint.setTextSize(0.045f*w);
+
+		handPaint.setShadowLayer(0.01f*w, -0.005f*w, -0.005f*w, 0x7f000000);
+
+		titlePaint.setTextSize(0.05f*w);
 
 		regenerateCache();
 	}
@@ -376,8 +373,6 @@ public final class Gauge extends View {
 
 		cached = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
 		Canvas cachedCanvas = new Canvas(cached);
-		float scale = (float) getWidth();
-		cachedCanvas.scale(scale, scale);
 
 		drawRim(cachedCanvas);
 		drawScale(cachedCanvas);

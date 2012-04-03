@@ -78,7 +78,8 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
-		showControls();// should be hideControls, but I need to test the interface
+		//showControls();// should be hideControls, but I need to test the interface
+		hideControls();
     }
 
     @Override
