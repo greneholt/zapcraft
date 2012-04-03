@@ -1,4 +1,4 @@
-package edu.mines.zapcraft.FuelBehavior.Views;
+package edu.mines.zapcraft.FuelBehavior;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -17,7 +17,6 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import edu.mines.zapcraft.FuelBehavior.R;
 
 public final class Gauge extends View {
 
@@ -67,7 +66,9 @@ public final class Gauge extends View {
 
 	private String title = "ZapCraft";
 
-	private Paint handEdgePaint;
+	private Paint handLinePaint;
+
+	private Path handLinePath;
 
 	public Gauge(Context context) {
 		super(context);
@@ -200,24 +201,30 @@ public final class Gauge extends View {
 
 		handPaint = new Paint();
 		handPaint.setAntiAlias(true);
-		handPaint.setColor(Color.WHITE);
+		handPaint.setColor(Color.BLACK);
 		handPaint.setShadowLayer(0.01f, -0.005f, -0.005f, 0x7f000000);
 		handPaint.setStyle(Paint.Style.FILL);
-
-		handEdgePaint = new Paint();
-		handEdgePaint.setAntiAlias(true);
-		handEdgePaint.setStyle(Paint.Style.STROKE);
-		handEdgePaint.setColor(Color.BLACK);
-		handEdgePaint.setStrokeWidth(0.005f);
 
 		handPath = new Path();
 		handPath.moveTo(0.5f, 0.5f + 0.2f);
 		handPath.lineTo(0.5f - 0.010f, 0.5f + 0.2f - 0.007f);
-		handPath.lineTo(0.5f - 0.005f, 0.5f - 0.32f);
-		handPath.lineTo(0.5f + 0.005f, 0.5f - 0.32f);
+		handPath.lineTo(0.5f - 0.008f, 0.5f - 0.32f);
+		handPath.lineTo(0.5f + 0.008f, 0.5f - 0.32f);
 		handPath.lineTo(0.5f + 0.010f, 0.5f + 0.2f - 0.007f);
 		handPath.lineTo(0.5f, 0.5f + 0.2f);
 		handPath.addCircle(0.5f, 0.5f, 0.025f, Path.Direction.CW);
+
+		handLinePaint = new Paint();
+		handLinePaint.setAntiAlias(true);
+		handLinePaint.setStyle(Paint.Style.FILL);
+		handLinePaint.setColor(Color.WHITE);
+
+		handLinePath = new Path();
+		handLinePath.moveTo(0.5f + 0.004f, 0.5f - 0.1f);
+		handLinePath.lineTo(0.5f - 0.004f, 0.5f - 0.1f);
+		handLinePath.lineTo(0.5f - 0.003f, 0.5f - 0.315f);
+		handLinePath.lineTo(0.5f + 0.003f, 0.5f - 0.315f);
+		handLinePath.lineTo(0.5f + 0.004f, 0.5f - 0.1f);
 
 		handScrewPaint = new Paint();
 		handScrewPaint.setAntiAlias(true);
@@ -312,10 +319,9 @@ public final class Gauge extends View {
 		float handAngle = valueToAngle(handValue);
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
 		canvas.rotate(handAngle, 0.5f, 0.5f);
-		canvas.drawPath(handPath, handEdgePaint);
 		canvas.drawPath(handPath, handPaint);
+		canvas.drawPath(handLinePath, handLinePaint);
 		canvas.restore();
-
 		canvas.drawCircle(0.5f, 0.5f, 0.01f, handScrewPaint);
 	}
 
@@ -347,7 +353,6 @@ public final class Gauge extends View {
 
 		drawCached(canvas);
 
-		scale = (float) getWidth();
 		canvas.save(Canvas.MATRIX_SAVE_FLAG);
 		canvas.scale(scale, scale);
 

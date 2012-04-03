@@ -19,8 +19,6 @@ import android.widget.TextView;
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
 
-import edu.mines.zapcraft.FuelBehavior.Views.Gauge;
-
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -41,6 +39,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	FileOutputStream mOutputStream;
 
 	private static final int MESSAGE_STRING = 1;
+	private static final int MESSAGE_MPG = 2;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -173,7 +172,11 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				break;
 			}
 
-			if (ret > 0) {
+			if (ret == 1) {
+				Message m = Message.obtain(mHandler, MESSAGE_MPG);
+				m.obj = new Integer(buffer[0]);
+				mHandler.sendMessage(m);
+			} else if (ret > 0) {
 				Message m = Message.obtain(mHandler, MESSAGE_STRING);
 				m.obj = new String(buffer);
 				mHandler.sendMessage(m);
@@ -189,6 +192,9 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				String s = (String) msg.obj;
 				handleStringMessage(s);
 				break;
+			case MESSAGE_MPG:
+				int v = (Integer) msg.obj;
+				setGauge(v);
 			}
 		}
 	};
@@ -207,16 +213,14 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				buffer[0] = 48;
 				handleStringMessage("Sent command");
 				sendCommand(buffer);
-				Gauge guage = (Gauge) findViewById(R.id.gauge1);
-				guage.setHandValue(70);
+				setGauge(70);
 			}
 		});
 
 		Button button2 = (Button) findViewById(R.id.button2);
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				Gauge guage = (Gauge) findViewById(R.id.gauge1);
-				guage.setHandValue(30);
+				setGauge(30);
 			}
 		});
 	}
@@ -234,5 +238,10 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	public void handleStringMessage(String message) {
 		TextView textView = (TextView) findViewById(R.id.output_text);
 		textView.setText(message);
+	}
+
+	public void setGauge(float value) {
+		Gauge gauge = (Gauge) findViewById(R.id.gauge1);
+		gauge.setHandValue(value);
 	}
 }

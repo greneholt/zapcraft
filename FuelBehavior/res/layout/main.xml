@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:gaugewidget="http://schemas.android.com/apk/res/edu.mines.zapcraft.FuelBehavior"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
@@ -7,8 +8,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0.73" >
-        
+        android:layout_weight="0.73">
+
         <TextView
             android:id="@+id/output_text"
             android:layout_width="wrap_content"
@@ -16,10 +17,11 @@
             android:layout_weight="4.04"
             android:text="@string/hello" />
 
-	    <edu.mines.zapcraft.FuelBehavior.Views.Gauge
+	    <edu.mines.zapcraft.FuelBehavior.Gauge
 	        android:id="@+id/gauge1"
 	        android:layout_width="316dp"
-	        android:layout_height="match_parent" />
+	        android:layout_height="match_parent"
+	        gaugewidget:title="Miles per Gallon" />
 
     </LinearLayout>
 
@@ -28,7 +30,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/send_command_string" />
-    
+
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
