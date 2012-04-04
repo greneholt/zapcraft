@@ -100,8 +100,8 @@ void loop()
   
   if(millis()-timer>100) { // sending 10 times per second
     if (accessory.isConnected()) { // isConnected makes sure the USB connection is ope
-      char val = accessory.read();
-      Serial.print( val );
+      //char val = accessory.read();
+      Serial.println(k);
       accessory.write(k++);
     }
     timer = millis();

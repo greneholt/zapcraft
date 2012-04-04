@@ -42,6 +42,8 @@ public final class Gauge extends View {
 
 	private Paint handPaint;
 	private Path handPath;
+	private Paint handLinePaint;
+	private Path handLinePath;
 	private Paint handScrewPaint;
 
 	private Paint cachedPaint;
@@ -49,26 +51,23 @@ public final class Gauge extends View {
 
 	private Bitmap cached; // holds the cached static part
 
-	// scale configuration
-	private static final int totalNicks = 100;
-	private static final int minDegrees = -140;
-	private static final int maxDegrees = 140;
-	private static final int degreeRange = maxDegrees - minDegrees;
-	private static final float degreesPerNick = (float) degreeRange / totalNicks;
-	private static final int minValue = 0;
-	private static final int maxValue = 100;
-	private static final int valueRange = maxValue - minValue;
-	private static final float valuesPerNick = (float) valueRange / totalNicks;
-	private static final float degreesPerValue = (float) degreeRange / valueRange;
-
-	// hand dynamics -- all are angular expressed in F degrees
-	private float handValue = minValue;
-
+	// configuration
+	private int totalNicks = 100;
+	private int largeNickInterval = 5;
+	private int minDegrees = -140;
+	private int maxDegrees = 140;
+	private int degreeRange;
+	private float degreesPerNick;
+	private int minValue = 0;
+	private int maxValue = 100;
+	private int valueRange;
+	private float valuesPerNick;
+	private float degreesPerValue;
 	private String title = "ZapCraft";
 
-	private Paint handLinePaint;
+	// hand value
+	private float handValue;
 
-	private Path handLinePath;
 
 	public Gauge(Context context) {
 		super(context);
@@ -118,9 +117,24 @@ public final class Gauge extends View {
 		// Get the properties from the resource file.
 		if (context != null && attrs != null){
 			TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Gauge);
-			String title       = a.getString(R.styleable.Gauge_title);
+
+			totalNicks = a.getInt(R.styleable.Gauge_totalNicks, totalNicks);
+			largeNickInterval = a.getInt(R.styleable.Gauge_largeNickInterval, largeNickInterval);
+			minDegrees = a.getInt(R.styleable.Gauge_minDegrees, minDegrees);
+			maxDegrees = a.getInt(R.styleable.Gauge_maxDegrees, maxDegrees);
+			minValue = a.getInt(R.styleable.Gauge_minValue, minValue);
+			maxValue = a.getInt(R.styleable.Gauge_maxValue, maxValue);
+			String title = a.getString(R.styleable.Gauge_title);
 			if (title != null) this.title = title;
 		}
+
+		degreeRange = maxDegrees - minDegrees;
+		degreesPerNick = (float) degreeRange / totalNicks;
+		valueRange = maxValue - minValue;
+		valuesPerNick = (float) valueRange / totalNicks;
+		degreesPerValue = (float) degreeRange / valueRange;
+
+		handValue = minValue;
 
 		initDrawingTools();
 	}
@@ -238,14 +252,14 @@ public final class Gauge extends View {
 			float y1 = scaleRect.top;
 			float y2 = y1 - 0.015f*w;
 
-			if (i % 5 == 0) {
+			if (i % largeNickInterval == 0) {
 				canvas.drawLine(center, y1, center, y2 - 0.015f*w, scalePaint);
 
 				int value = (int)(i * valuesPerNick + minValue);
 
 				if (value >= minValue && value <= maxValue) {
 					String valueString = Integer.toString(value);
-					canvas.drawText(valueString, center, y2 - 0.02f*w, scalePaint);
+					canvas.drawText(valueString, center, y2 - 0.025f*w, scalePaint);
 				}
 			} else {
 				canvas.drawLine(center, y1, center, y2, scalePaint);

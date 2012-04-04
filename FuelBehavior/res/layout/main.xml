@@ -12,16 +12,19 @@
 
         <TextView
             android:id="@+id/output_text"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="4.04"
             android:text="@string/hello" />
 
 	    <edu.mines.zapcraft.FuelBehavior.Gauge
 	        android:id="@+id/gauge1"
-	        android:layout_width="316dp"
-	        android:layout_height="match_parent"
-	        gaugewidget:title="Miles per Gallon" />
+	        android:layout_width="309dp"
+	        android:layout_height="wrap_content"
+	        gaugewidget:largeNickInterval="4"
+	        gaugewidget:maxValue="256"
+	        gaugewidget:title="Miles Per Gallon"
+	        gaugewidget:totalNicks="64" />
 
     </LinearLayout>
 
