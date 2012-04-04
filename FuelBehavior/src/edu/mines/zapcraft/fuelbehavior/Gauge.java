@@ -290,8 +290,8 @@ public final class Gauge extends View {
 	}
 
 	private void drawFace(Canvas canvas) {
-		int color = Color.rgb((int)(0xff * getRelativePosition()),
-			0xff - (int)(0xff * getRelativePosition()), 0x00);
+		int color = Color.rgb((int)(0xff - 0xff * getRelativePosition()),
+			(int)(0xff * getRelativePosition()), 0x00);
 
 		facePaint.setColor(color);
 		canvas.drawOval(faceRect, facePaint);
