@@ -101,20 +101,19 @@ void loop()
       int rpm = get_rpm();
       uint8_t msg[3];
       msg[0] = 0x1;
-      decompose_int(rpm, msg[1], msg[2]);
+      decompose_int(rpm, msg[1], msg[2], msg[3]);
       accessory.write(msg, 3);
     }
     timer = millis();
   }
 }
 
-void decompose_int(int val, uint8_t &high, uint8_t &low)
+void decompose_int(int val, uint8_t &high, uint8_t &low, uint8_t &checksum)
 {
   high = val >> 8;
   low = val & 0xff;
+  checksum = high ^ low;
 }
-
-
 
 // Function to write to ELM device
 void elm_write(char *str)

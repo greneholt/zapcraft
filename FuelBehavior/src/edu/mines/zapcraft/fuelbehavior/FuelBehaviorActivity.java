@@ -180,12 +180,12 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 
 				switch (buffer[i]) {
 				case 0x1:
-					if (len >= 3) {
+					if (len >= 4 && validateChecksum(buffer[i+1], buffer[i+2], buffer[i+3])) {
 						Message m = Message.obtain(mHandler, MESSAGE_RPM);
 						m.obj = new Integer(composeInt(buffer[i+1], buffer[i+2]));
 						mHandler.sendMessage(m);
 					}
-					i += 3;
+					i += 4;
 					break;
 
 				default:
@@ -258,9 +258,13 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		gauge.setHandValue(value);
 	}
 
-	private int composeInt(byte hi, byte lo) {
-		int val = ((int) hi & 0xff) << 8;
-		val |= (int) lo & 0xff;
+	private int composeInt(byte high, byte low) {
+		int val = ((int) high & 0xff) << 8;
+		val |= (int) low & 0xff;
 		return val;
+	}
+
+	private boolean validateChecksum(byte high, byte low, byte checksum) {
+		return (high ^ low) == checksum;
 	}
 }
