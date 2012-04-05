@@ -1,20 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:gaugewidget="http://schemas.android.com/apk/res/edu.mines.zapcraft.FuelBehavior"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <TextView
-        android:id="@+id/output_text"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:text="@string/hello" />
+        android:layout_height="wrap_content"
+        android:layout_weight="0.73">
+
+        <TextView
+            android:id="@+id/output_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="4.04"
+            android:text="@string/hello" />
+
+	    <edu.mines.zapcraft.FuelBehavior.Gauge
+	        android:id="@+id/gauge1"
+	        android:layout_width="309dp"
+	        android:layout_height="wrap_content"
+	        gaugewidget:largeNickInterval="10"
+	        gaugewidget:maxValue="4000"
+	        gaugewidget:title="Miles Per Gallon"
+	        gaugewidget:totalNicks="100" />
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/send_command_string" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set Dial" />
 
 </LinearLayout>

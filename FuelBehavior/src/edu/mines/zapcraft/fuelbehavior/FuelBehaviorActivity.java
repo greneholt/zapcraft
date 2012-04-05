@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class FuelBehaviorActivity extends Activity implements Runnable {
-	private static final String TAG = "FuelBehavior";
+	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
 
@@ -39,6 +39,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	FileOutputStream mOutputStream;
 
 	private static final int MESSAGE_STRING = 1;
+	private static final int MESSAGE_RPM = 2;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -77,6 +78,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
+		//showControls();// should be hideControls, but I need to test the interface
 		hideControls();
     }
 
@@ -159,8 +161,9 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	public void run() {
 		int ret = 0;
 		byte[] buffer = new byte[16384];
+		int i;
 
-		while (true) {
+		while (ret >= 0) {
 			try {
 				ret = mInputStream.read(buffer);
 			} catch (IOException e) {
@@ -171,10 +174,25 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				break;
 			}
 
-			if (ret > 0) {
-				Message m = Message.obtain(mHandler, MESSAGE_STRING);
-				m.obj = new String(buffer);
-				mHandler.sendMessage(m);
+			i = 0;
+			while (i < ret) {
+				int len = ret - i;
+
+				switch (buffer[i]) {
+				case 0x1:
+					if (len >= 3) {
+						Message m = Message.obtain(mHandler, MESSAGE_RPM);
+						m.obj = new Integer(composeInt(buffer[i+1], buffer[i+2]));
+						mHandler.sendMessage(m);
+					}
+					i += 3;
+					break;
+
+				default:
+					Log.d(TAG, "unknown msg: " + buffer[i]);
+					i = len;
+					break;
+				}
 			}
 		}
 	}
@@ -187,6 +205,9 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				String s = (String) msg.obj;
 				handleStringMessage(s);
 				break;
+			case MESSAGE_RPM:
+				int v = (Integer) msg.obj;
+				setGauge(v);
 			}
 		}
 	};
@@ -205,6 +226,14 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 				buffer[0] = 48;
 				handleStringMessage("Sent command");
 				sendCommand(buffer);
+				setGauge(70);
+			}
+		});
+
+		Button button2 = (Button) findViewById(R.id.button2);
+		button2.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				setGauge(30);
 			}
 		});
 	}
@@ -222,5 +251,16 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	public void handleStringMessage(String message) {
 		TextView textView = (TextView) findViewById(R.id.output_text);
 		textView.setText(message);
+	}
+
+	public void setGauge(float value) {
+		Gauge gauge = (Gauge) findViewById(R.id.gauge1);
+		gauge.setHandValue(value);
+	}
+
+	private int composeInt(byte hi, byte lo) {
+		int val = ((int) hi & 0xff) << 8;
+		val |= (int) lo & 0xff;
+		return val;
 	}
 }

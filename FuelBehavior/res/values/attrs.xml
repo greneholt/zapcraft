@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<declare-styleable name="Gauge">
+		<attr name="totalNicks" format="integer" />
+		<attr name="largeNickInterval" format="integer" />
+		<attr name="minDegrees" format="integer" />
+		<attr name="maxDegrees" format="integer" />
+		<attr name="minValue" format="integer" />
+		<attr name="maxValue" format="integer" />
+		<attr name="title" format="string"/>
+	</declare-styleable>
+</resources>
