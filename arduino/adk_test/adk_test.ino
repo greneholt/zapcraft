@@ -84,28 +84,34 @@ accessoryName,versionNumber,url,serialNumber);
 
 void setup() {
   // initialize serial ports 0 (serial 1 initialized in ELM function
-  Serial.begin(9600);
+  //Serial.begin(9600);
   // Start USB connection to Android device
   accessory.powerOn();
   // Initialize ELM chip
-  //elm_init();
+  elm_init();
 }
 
 void loop()
 {
-  int param = 0;  // For holding requested parameter
-  char msg[10];
   static uint8_t k = 0;
   static long timer = millis();
   
   if(millis()-timer>100) { // sending 10 times per second
-    if (accessory.isConnected()) { // isConnected makes sure the USB connection is ope
-      //char val = accessory.read();
-      Serial.println(k);
-      accessory.write(k++);
+    if (accessory.isConnected()) { // isConnected makes sure the USB connection is open
+      int rpm = get_rpm();
+      uint8_t msg[3];
+      msg[0] = 0x1;
+      decompose_int(rpm, msg[1], msg[2]);
+      accessory.write(msg, 3);
     }
     timer = millis();
   }
+}
+
+void decompose_int(int val, uint8_t &high, uint8_t &low)
+{
+  high = val >> 8;
+  low = val & 0xff;
 }
 
 

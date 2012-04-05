@@ -21,10 +21,10 @@
 	        android:id="@+id/gauge1"
 	        android:layout_width="309dp"
 	        android:layout_height="wrap_content"
-	        gaugewidget:largeNickInterval="4"
-	        gaugewidget:maxValue="256"
+	        gaugewidget:largeNickInterval="10"
+	        gaugewidget:maxValue="4000"
 	        gaugewidget:title="Miles Per Gallon"
-	        gaugewidget:totalNicks="64" />
+	        gaugewidget:totalNicks="100" />
 
     </LinearLayout>
 
