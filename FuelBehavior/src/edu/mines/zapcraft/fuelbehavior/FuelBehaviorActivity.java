@@ -1,6 +1,7 @@
 package edu.mines.zapcraft.FuelBehavior;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -15,16 +16,22 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android_serialport_api.SerialPort;
 
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-public class FuelBehaviorActivity extends Activity implements Runnable {
+import net.sf.marineapi.nmea.io.SentenceReader;
+
+public class FuelBehaviorActivity extends Activity {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
@@ -33,10 +40,16 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	private PendingIntent mPermissionIntent;
 	private boolean mPermissionRequestPending;
 
-	UsbAccessory mAccessory;
-	ParcelFileDescriptor mFileDescriptor;
-	FileInputStream mInputStream;
-	FileOutputStream mOutputStream;
+	private UsbAccessory mAccessory;
+	private ParcelFileDescriptor mADKFileDescriptor;
+	private InputStream mADKInputStream;
+	private OutputStream mADKOutputStream;
+
+	private SerialPort mSerialPort;
+
+	private SentenceReader mSentenceReader;
+	private InputStream mGPSInputStream;
+	private DataHandler mDataHandler;
 
 	private static final int MESSAGE_STRING = 1;
 	private static final int MESSAGE_RPM = 2;
@@ -66,11 +79,54 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		}
 	};
 
-    /** Called when the activity is first created. */
+    private class ADKThread extends Thread {
+    	@Override
+    	public void run() {
+			int ret = 0;
+			byte[] buffer = new byte[16384];
+			int i;
+
+			while (ret >= 0) {
+				try {
+					ret = mADKInputStream.read(buffer);
+				} catch (IOException e) {
+					Message m = Message.obtain(mHandler, MESSAGE_STRING);
+					Log.e(TAG, "read failed", e);
+					m.obj = "IOException";
+					mHandler.sendMessage(m);
+					break;
+				}
+
+				i = 0;
+				while (i < ret) {
+					int len = ret - i;
+
+					switch (buffer[i]) {
+					case 0x1:
+						if (len >= 4 && validateChecksum(buffer[i+1], buffer[i+2], buffer[i+3])) {
+							Message m = Message.obtain(mHandler, MESSAGE_RPM);
+							m.obj = new Integer(composeInt(buffer[i+1], buffer[i+2]));
+							mHandler.sendMessage(m);
+						}
+						i += 4;
+						break;
+
+					default:
+						Log.d(TAG, "unknown msg: " + buffer[i]);
+						i = len;
+						break;
+					}
+				}
+			}
+		}
+    }
+
+	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // setup receivers for USB notifications
         mUsbManager = UsbManager.getInstance(this);
 		mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(
 				ACTION_USB_PERMISSION), 0);
@@ -78,8 +134,10 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
-		//showControls();// should be hideControls, but I need to test the interface
-		hideControls();
+		mDataHandler = new DataHandler();
+
+		showControls();// should be hideControls, but I need to test the interface
+		//hideControls();
     }
 
     @Override
@@ -91,33 +149,34 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	public void onResume() {
 		super.onResume();
 
-		if (mInputStream != null && mOutputStream != null) {
-			return;
-		}
-
-		UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-		UsbAccessory accessory = (accessories == null ? null : accessories[0]);
-		if (accessory != null) {
-			if (mUsbManager.hasPermission(accessory)) {
-				openAccessory(accessory);
-			} else {
-				synchronized (mUsbReceiver) {
-					if (!mPermissionRequestPending) {
-						mUsbManager.requestPermission(accessory,
-								mPermissionIntent);
-						mPermissionRequestPending = true;
+		if (mADKInputStream == null || mADKOutputStream == null) {
+			UsbAccessory[] accessories = mUsbManager.getAccessoryList();
+			UsbAccessory accessory = (accessories == null ? null : accessories[0]);
+			if (accessory != null) {
+				if (mUsbManager.hasPermission(accessory)) {
+					openAccessory(accessory);
+				} else {
+					synchronized (mUsbReceiver) {
+						if (!mPermissionRequestPending) {
+							mUsbManager.requestPermission(accessory,
+									mPermissionIntent);
+							mPermissionRequestPending = true;
+						}
 					}
 				}
+			} else {
+				Log.d(TAG, "mAccessory is null");
 			}
-		} else {
-			Log.d(TAG, "mAccessory is null");
 		}
+
+		startGPS();
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
 		closeAccessory();
+		stopGPS();
 	}
 
 	@Override
@@ -127,13 +186,13 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
-		mFileDescriptor = mUsbManager.openAccessory(accessory);
-		if (mFileDescriptor != null) {
+		mADKFileDescriptor = mUsbManager.openAccessory(accessory);
+		if (mADKFileDescriptor != null) {
 			mAccessory = accessory;
-			FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-			mInputStream = new FileInputStream(fd);
-			mOutputStream = new FileOutputStream(fd);
-			Thread thread = new Thread(null, this, "FuelBehavior");
+			FileDescriptor fd = mADKFileDescriptor.getFileDescriptor();
+			mADKInputStream = new FileInputStream(fd);
+			mADKOutputStream = new FileOutputStream(fd);
+			Thread thread = new ADKThread();
 			thread.start();
 			Log.d(TAG, "accessory opened");
 			showControls();
@@ -146,54 +205,45 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		hideControls();
 
 		try {
-			if (mFileDescriptor != null) {
-				mFileDescriptor.close();
+			if (mADKFileDescriptor != null) {
+				mADKFileDescriptor.close();
 			}
 		} catch (IOException e) {
 		} finally {
-			mFileDescriptor = null;
-			mInputStream = null;
-			mOutputStream = null;
+			mADKFileDescriptor = null;
+			mADKInputStream = null;
+			mADKOutputStream = null;
 			mAccessory = null;
 		}
 	}
 
-	public void run() {
-		int ret = 0;
-		byte[] buffer = new byte[16384];
-		int i;
+	private void startGPS() {
+		try {
+			mSerialPort = new SerialPort(new File("/dev/ttyUSB0"), 4800, 0);
+			mGPSInputStream = mSerialPort.getInputStream();
+			mSentenceReader = new SentenceReader(mGPSInputStream);
+            mSentenceReader.addSentenceListener(mDataHandler);
+            mSentenceReader.start();
+		} catch (SecurityException e) {
+			DisplayError(R.string.error_gps_security);
+		} catch (IOException e) {
+			DisplayError(R.string.error_gps_ioexception);
+		}
+	}
 
-		while (ret >= 0) {
-			try {
-				ret = mInputStream.read(buffer);
-			} catch (IOException e) {
-				Message m = Message.obtain(mHandler, MESSAGE_STRING);
-				Log.e(TAG, "read failed", e);
-				m.obj = "IOException";
-				mHandler.sendMessage(m);
-				break;
+	private void stopGPS() {
+		try {
+			if (mSentenceReader != null) {
+				mSentenceReader.stop();
 			}
 
-			i = 0;
-			while (i < ret) {
-				int len = ret - i;
-
-				switch (buffer[i]) {
-				case 0x1:
-					if (len >= 3) {
-						Message m = Message.obtain(mHandler, MESSAGE_RPM);
-						m.obj = new Integer(composeInt(buffer[i+1], buffer[i+2]));
-						mHandler.sendMessage(m);
-					}
-					i += 3;
-					break;
-
-				default:
-					Log.d(TAG, "unknown msg: " + buffer[i]);
-					i = len;
-					break;
-				}
+			if (mSerialPort != null) {
+				mSerialPort.close();
 			}
+		} finally {
+			mSentenceReader = null;
+			mSerialPort = null;
+			mGPSInputStream = null;
 		}
 	}
 
@@ -222,11 +272,8 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				byte[] buffer = new byte[1];
-				buffer[0] = 48;
-				handleStringMessage("Sent command");
-				sendCommand(buffer);
-				setGauge(70);
+				handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
+				handleStringMessage("Speed: " + mDataHandler.getSpeed() + " Course: " + mDataHandler.getCourse());
 			}
 		});
 
@@ -239,9 +286,9 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 	}
 
 	public void sendCommand(byte[] command) {
-		if (mOutputStream != null) {
+		if (mADKOutputStream != null) {
 			try {
-				mOutputStream.write(command);
+				mADKOutputStream.write(command);
 			} catch (IOException e) {
 				Log.e(TAG, "write failed", e);
 			}
@@ -250,7 +297,7 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 
 	public void handleStringMessage(String message) {
 		TextView textView = (TextView) findViewById(R.id.output_text);
-		textView.setText(message);
+		textView.append(message + "\n");
 	}
 
 	public void setGauge(float value) {
@@ -258,9 +305,20 @@ public class FuelBehaviorActivity extends Activity implements Runnable {
 		gauge.setHandValue(value);
 	}
 
-	private int composeInt(byte hi, byte lo) {
-		int val = ((int) hi & 0xff) << 8;
-		val |= (int) lo & 0xff;
+	private void DisplayError(int resourceId) {
+		AlertDialog.Builder b = new AlertDialog.Builder(this);
+		b.setTitle("Error");
+		b.setMessage(resourceId);
+		b.show();
+	}
+
+	private int composeInt(byte high, byte low) {
+		int val = ((int) high & 0xff) << 8;
+		val |= (int) low & 0xff;
 		return val;
+	}
+
+	private boolean validateChecksum(byte high, byte low, byte checksum) {
+		return (high ^ low) == checksum;
 	}
 }
