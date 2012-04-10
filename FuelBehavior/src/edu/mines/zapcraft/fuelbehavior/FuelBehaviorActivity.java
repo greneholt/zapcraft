@@ -43,9 +43,9 @@ public class FuelBehaviorActivity extends Activity {
 	private boolean mPermissionRequestPending;
 
 	private UsbAccessory mAccessory;
-	private ParcelFileDescriptor mADKFileDescriptor;
-	private InputStream mADKInputStream;
-	private OutputStream mADKOutputStream;
+	private ParcelFileDescriptor mAccessoryFileDescriptor;
+	private InputStream mAccessoryInputStream;
+	private OutputStream mAccessoryOutputStream;
 
 	private SerialPort mSerialPort;
 
@@ -92,7 +92,7 @@ public class FuelBehaviorActivity extends Activity {
 
 			while (ret >= 0) {
 				try {
-					ret = mADKInputStream.read(buffer);
+					ret = mAccessoryInputStream.read(buffer);
 				} catch (IOException e) {
 					Message m = Message.obtain(mHandler, MESSAGE_STRING);
 					Log.e(TAG, "read failed", e);
@@ -160,7 +160,7 @@ public class FuelBehaviorActivity extends Activity {
 			mWakeLock.acquire();
 		}
 
-		if (mADKInputStream == null || mADKOutputStream == null) {
+		if (mAccessoryInputStream == null || mAccessoryOutputStream == null) {
 			UsbAccessory[] accessories = mUsbManager.getAccessoryList();
 			UsbAccessory accessory = (accessories == null ? null : accessories[0]);
 			if (accessory != null) {
@@ -203,12 +203,12 @@ public class FuelBehaviorActivity extends Activity {
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
-		mADKFileDescriptor = mUsbManager.openAccessory(accessory);
-		if (mADKFileDescriptor != null) {
+		mAccessoryFileDescriptor = mUsbManager.openAccessory(accessory);
+		if (mAccessoryFileDescriptor != null) {
 			mAccessory = accessory;
-			FileDescriptor fd = mADKFileDescriptor.getFileDescriptor();
-			mADKInputStream = new FileInputStream(fd);
-			mADKOutputStream = new FileOutputStream(fd);
+			FileDescriptor fd = mAccessoryFileDescriptor.getFileDescriptor();
+			mAccessoryInputStream = new FileInputStream(fd);
+			mAccessoryOutputStream = new FileOutputStream(fd);
 			Thread thread = new ADKThread();
 			thread.start();
 			Log.d(TAG, "accessory opened");
@@ -222,14 +222,14 @@ public class FuelBehaviorActivity extends Activity {
 		hideControls();
 
 		try {
-			if (mADKFileDescriptor != null) {
-				mADKFileDescriptor.close();
+			if (mAccessoryFileDescriptor != null) {
+				mAccessoryFileDescriptor.close();
 			}
 		} catch (IOException e) {
 		} finally {
-			mADKFileDescriptor = null;
-			mADKInputStream = null;
-			mADKOutputStream = null;
+			mAccessoryFileDescriptor = null;
+			mAccessoryInputStream = null;
+			mAccessoryOutputStream = null;
 			mAccessory = null;
 		}
 	}
@@ -303,9 +303,9 @@ public class FuelBehaviorActivity extends Activity {
 	}
 
 	public void sendCommand(byte[] command) {
-		if (mADKOutputStream != null) {
+		if (mAccessoryOutputStream != null) {
 			try {
-				mADKOutputStream.write(command);
+				mAccessoryOutputStream.write(command);
 			} catch (IOException e) {
 				Log.e(TAG, "write failed", e);
 			}
