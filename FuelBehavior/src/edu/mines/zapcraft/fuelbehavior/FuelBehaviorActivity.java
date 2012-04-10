@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -50,6 +52,8 @@ public class FuelBehaviorActivity extends Activity {
 	private SentenceReader mSentenceReader;
 	private InputStream mGPSInputStream;
 	private DataHandler mDataHandler;
+
+	private WakeLock mWakeLock;
 
 	private static final int MESSAGE_STRING = 1;
 	private static final int MESSAGE_RPM = 2;
@@ -126,6 +130,9 @@ public class FuelBehaviorActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        mWakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AMV");
+
         // setup receivers for USB notifications
         mUsbManager = UsbManager.getInstance(this);
 		mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(
@@ -148,6 +155,10 @@ public class FuelBehaviorActivity extends Activity {
     @Override
 	public void onResume() {
 		super.onResume();
+
+		if (!mWakeLock.isHeld()) {
+			mWakeLock.acquire();
+		}
 
 		if (mADKInputStream == null || mADKOutputStream == null) {
 			UsbAccessory[] accessories = mUsbManager.getAccessoryList();
@@ -175,14 +186,20 @@ public class FuelBehaviorActivity extends Activity {
 	@Override
 	public void onPause() {
 		super.onPause();
+
+		if (mWakeLock.isHeld()) {
+			mWakeLock.release();
+		}
+
 		closeAccessory();
 		stopGPS();
 	}
 
 	@Override
 	public void onDestroy() {
-		unregisterReceiver(mUsbReceiver);
 		super.onDestroy();
+
+		unregisterReceiver(mUsbReceiver);
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
