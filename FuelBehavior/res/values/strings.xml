@@ -4,6 +4,8 @@
     <string name="hello">Hello World, FuelBehaviorActivity!</string>
     <string name="app_name">FuelBehavior</string>
     <string name="no_device">No device connected</string>
-    <string name="send_command_string">Send Command</string>
+    <string name="read_gps">Read GPS</string>
+    <string name="error_gps_security">Permissions incorrect for /dev/ttyUSB0 to access GPS</string>
+    <string name="error_gps_ioexception">An IOException occurred when communicating with the GPS</string>
 
 </resources>
