@@ -1,64 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:gaugewidget="http://schemas.android.com/apk/res/edu.mines.zapcraft.FuelBehavior"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical" >
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.73">
-        
+        android:layout_height="376dp" >
+
         <org.mapsforge.android.maps.MapView
             android:id="@+id/mapView"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1" />
 
-	    <LinearLayout
-	        android:layout_width="match_parent"
-	        android:layout_height="match_parent"
-	        android:layout_weight="1"
-	        android:orientation="vertical" >
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical" >
 
-	        <edu.mines.zapcraft.FuelBehavior.Gauge
-	            android:id="@+id/gauge1"
-	            android:layout_width="match_parent"
-	            android:layout_height="match_parent"
-	            android:layout_weight="1"
-	            gaugewidget:largeNickInterval="10"
-	            gaugewidget:maxValue="4000"
-	            gaugewidget:title="RPM"
-	            gaugewidget:totalNicks="100" />
+            <edu.mines.zapcraft.FuelBehavior.Gauge
+                android:id="@+id/gauge1"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                gaugewidget:largeNickInterval="10"
+                gaugewidget:maxValue="4000"
+                gaugewidget:title="RPM"
+                gaugewidget:totalNicks="100" />
 
-	        <EditText
-	            android:id="@+id/output_text"
-	            android:layout_width="match_parent"
-	            android:layout_height="match_parent"
-	            android:layout_weight="1"
-	            android:gravity="top"
-	            android:hint="Data"
-	            android:isScrollContainer="true"
-	            android:scrollbarStyle="insideOverlay" >
+            <EditText
+                android:id="@+id/output_text"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="top"
+                android:hint="Data"
+                android:isScrollContainer="true"
+                android:scrollbarStyle="insideOverlay" >
 
-	            <requestFocus />
-	        </EditText>
-
-	    </LinearLayout>
-
+                <requestFocus />
+            </EditText>
+        </LinearLayout>
     </LinearLayout>
 
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:text="@string/read_gps" />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:text="Set Dial" />
 
 </LinearLayout>
