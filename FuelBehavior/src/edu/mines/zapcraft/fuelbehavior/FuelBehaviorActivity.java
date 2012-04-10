@@ -1,6 +1,5 @@
 package edu.mines.zapcraft.FuelBehavior;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -33,7 +32,11 @@ import java.io.OutputStream;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
-public class FuelBehaviorActivity extends Activity {
+import org.mapsforge.android.maps.MapActivity;
+import org.mapsforge.android.maps.MapScaleBar;
+import org.mapsforge.android.maps.MapView;
+
+public class FuelBehaviorActivity extends MapActivity {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
@@ -54,6 +57,8 @@ public class FuelBehaviorActivity extends Activity {
 	private DataHandler mDataHandler;
 
 	private WakeLock mWakeLock;
+
+	private MapView mMapView;
 
 	private static final int MESSAGE_STRING = 1;
 	private static final int MESSAGE_RPM = 2;
@@ -285,6 +290,14 @@ public class FuelBehaviorActivity extends Activity {
 
 	public void showControls() {
 		setContentView(R.layout.main);
+
+		mMapView = (MapView) findViewById(R.id.mapView);
+		mMapView.setClickable(true);
+		mMapView.setBuiltInZoomControls(true);
+		mMapView.setMapFile(new File("/sdcard/frontrange.map"));
+		MapScaleBar mapScaleBar = mMapView.getMapScaleBar();
+		mapScaleBar.setImperialUnits(true);
+		mapScaleBar.setShowMapScaleBar(true);
 
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {

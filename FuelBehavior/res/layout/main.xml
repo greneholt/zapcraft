@@ -9,38 +9,56 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0.73">
-
-        <EditText
-            android:id="@+id/output_text"
+        
+        <org.mapsforge.android.maps.MapView
+            android:id="@+id/mapView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="4.04"
-            android:gravity="top"
-	        android:hint="Data"
-	        android:scrollbarStyle="insideOverlay"
-	        android:isScrollContainer="true" />
+            android:layout_weight="1" />
 
-	    <edu.mines.zapcraft.FuelBehavior.Gauge
-	        android:id="@+id/gauge1"
-	        android:layout_width="309dp"
-	        android:layout_height="wrap_content"
-	        gaugewidget:largeNickInterval="10"
-	        gaugewidget:maxValue="4000"
-	        gaugewidget:title="Miles Per Gallon"
-	        gaugewidget:totalNicks="100" />
+	    <LinearLayout
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:orientation="vertical" >
+
+	        <edu.mines.zapcraft.FuelBehavior.Gauge
+	            android:id="@+id/gauge1"
+	            android:layout_width="match_parent"
+	            android:layout_height="match_parent"
+	            android:layout_weight="1"
+	            gaugewidget:largeNickInterval="10"
+	            gaugewidget:maxValue="4000"
+	            gaugewidget:title="RPM"
+	            gaugewidget:totalNicks="100" />
+
+	        <EditText
+	            android:id="@+id/output_text"
+	            android:layout_width="match_parent"
+	            android:layout_height="match_parent"
+	            android:layout_weight="1"
+	            android:gravity="top"
+	            android:hint="Data"
+	            android:isScrollContainer="true"
+	            android:scrollbarStyle="insideOverlay" >
+
+	            <requestFocus />
+	        </EditText>
+
+	    </LinearLayout>
 
     </LinearLayout>
 
     <Button
         android:id="@+id/button1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:text="@string/read_gps" />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:text="Set Dial" />
 
 </LinearLayout>
