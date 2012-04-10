@@ -219,7 +219,7 @@ public class FuelBehaviorActivity extends Activity {
 
 	private void startGPS() {
 		try {
-			mSerialPort = new SerialPort(new File("/dev/ttyUSB0"), 9600, 0);
+			mSerialPort = new SerialPort(new File("/dev/ttyUSB0"), 4800, 0);
 			mGPSInputStream = mSerialPort.getInputStream();
 			mSentenceReader = new SentenceReader(mGPSInputStream);
             mSentenceReader.addSentenceListener(mDataHandler);
@@ -272,7 +272,8 @@ public class FuelBehaviorActivity extends Activity {
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				handleStringMessage(mDataHandler.getLastSentence().getSentence().toSentence());
+				handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
+				handleStringMessage("Speed: " + mDataHandler.getSpeed() + " Course: " + mDataHandler.getCourse());
 			}
 		});
 
