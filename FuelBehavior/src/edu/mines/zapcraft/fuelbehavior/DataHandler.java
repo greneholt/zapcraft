@@ -5,6 +5,7 @@ import net.sf.marineapi.nmea.event.SentenceListener;
 import net.sf.marineapi.nmea.sentence.GGASentence;
 import net.sf.marineapi.nmea.sentence.RMCSentence;
 import net.sf.marineapi.nmea.sentence.Sentence;
+import net.sf.marineapi.nmea.util.CompassPoint;
 import net.sf.marineapi.nmea.util.Position;
 
 
@@ -35,18 +36,14 @@ public class DataHandler implements SentenceListener {
 
 		if (sentence instanceof GGASentence) {
 			Position position = ((GGASentence) sentence).getPosition();
-			latitude = position.getLatitude();
-			longitude = position.getLongitude();
+			setLatLon(position);
 			altitude = position.getAltitude();
 		} else if (sentence instanceof RMCSentence) {
-			Position position = ((RMCSentence) sentence).getPosition();
-			latitude = position.getLatitude();
-			longitude = position.getLongitude();
+			setLatLon(((RMCSentence) sentence).getPosition());
 			speed = ((RMCSentence) sentence).getSpeed();
 			course = ((RMCSentence) sentence).getCourse();
 		}
 	}
-
 
 	/**
 	 * Returns the latitude in degrees.
@@ -92,5 +89,10 @@ public class DataHandler implements SentenceListener {
 	 */
 	public double getCourse() {
 		return course;
+	}
+
+	private void setLatLon(Position position) {
+		latitude = position.getLatHemisphere() == CompassPoint.NORTH ? position.getLatitude() : -position.getLatitude();
+		longitude = position.getLonHemisphere() == CompassPoint.EAST ? position.getLongitude() : -position.getLongitude();
 	}
 }

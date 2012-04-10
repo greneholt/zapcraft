@@ -33,8 +33,13 @@ import java.io.OutputStream;
 import net.sf.marineapi.nmea.io.SentenceReader;
 
 import org.mapsforge.android.maps.MapActivity;
+import org.mapsforge.android.maps.MapController;
 import org.mapsforge.android.maps.MapScaleBar;
 import org.mapsforge.android.maps.MapView;
+import org.mapsforge.android.maps.overlay.ArrayItemizedOverlay;
+import org.mapsforge.android.maps.overlay.ItemizedOverlay;
+import org.mapsforge.android.maps.overlay.OverlayItem;
+import org.mapsforge.core.GeoPoint;
 
 public class FuelBehaviorActivity extends MapActivity {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
@@ -58,7 +63,12 @@ public class FuelBehaviorActivity extends MapActivity {
 
 	private WakeLock mWakeLock;
 
+	private MapController mMapController;
 	private MapView mMapView;
+
+	private ArrayItemizedOverlay mItemizedOverlay;
+
+	private OverlayItem mOverlayItem;
 
 	private static final int MESSAGE_STRING = 1;
 	private static final int MESSAGE_RPM = 2;
@@ -299,11 +309,24 @@ public class FuelBehaviorActivity extends MapActivity {
 		mapScaleBar.setImperialUnits(true);
 		mapScaleBar.setShowMapScaleBar(true);
 
+		mMapController = mMapView.getController();
+
+		mItemizedOverlay = new ArrayItemizedOverlay(null);
+		mOverlayItem = new OverlayItem();
+		mOverlayItem.setMarker(ItemizedOverlay.boundCenter(getResources().getDrawable(R.drawable.my_location)));
+		mItemizedOverlay.addItem(this.mOverlayItem);
+		mMapView.getOverlays().add(this.mItemizedOverlay);
+
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
 				handleStringMessage("Speed: " + mDataHandler.getSpeed() + " Course: " + mDataHandler.getCourse());
+
+				GeoPoint point = new GeoPoint(mDataHandler.getLatitude(), mDataHandler.getLongitude());
+				mOverlayItem.setPoint(point);
+				mItemizedOverlay.requestRedraw();
+				mMapController.setCenter(point);
 			}
 		});
 
