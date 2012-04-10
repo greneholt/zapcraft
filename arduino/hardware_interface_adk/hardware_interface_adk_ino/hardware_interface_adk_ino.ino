@@ -291,6 +291,7 @@ void accu_trip()
   byte open_loop;
   unsigned long time_now, delta_time;
   unsigned long delta_dist, delta_fuel;
+  unsigned long fuel_flowrate;
   
   // time elapsed
   time_now = millis();
@@ -330,7 +331,7 @@ void accu_trip()
        manp = get_map()*1000;// [Pa]
        // Revolutions Per Minute
        rpm = get_rpm();// [Rev/min]
-       // Intake Ambiant Temperature
+       // Intake Ambient Temperature
        iat = get_iat() + 273;  // [K]
 
        // Calculate Mass Air Flow, uses scaling factor of 0.12
@@ -376,7 +377,11 @@ void accu_trip()
   // divide by 730 to have L/s
   // mul by 1000000 to have uL/s
   // divide by 1000 because delta_time is in ms
-  delta_fuel=(maf*FuelAdjust*delta_time) / GasMafConst;
+  //delta_fuel=(maf*FuelAdjust*delta_time) / GasMafConst;
+  
+  fuel_flowrate = maf*0.000092502;// [gallons/sec]
+  
+  instantfuel = (delta_dist)/(fuel_flowrate*delta_time*160.9344);// [mpg]
   
   // test function for instantaneous fuel economy
   // vss is in km/hour, delta_time is in ms, delta_fuel is in uL
@@ -384,6 +389,6 @@ void accu_trip()
   // because vss is in km/hour, divide by 1.609344 km/mi,
   // multiply by 3785411 microliters per gallon
   
-  instantfuel = (vss*delta_time*InstantConst) / delta_fuel;
+  //instantfuel = (vss*delta_time*InstantConst) / delta_fuel;
 }
 
