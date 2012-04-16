@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -21,6 +19,8 @@ import android_serialport_api.SerialPort;
 
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
+
+import java.nio.ByteBuffer;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -41,7 +41,7 @@ import org.mapsforge.android.maps.overlay.ItemizedOverlay;
 import org.mapsforge.android.maps.overlay.OverlayItem;
 import org.mapsforge.core.GeoPoint;
 
-public class FuelBehaviorActivity extends MapActivity {
+public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
@@ -56,9 +56,9 @@ public class FuelBehaviorActivity extends MapActivity {
 	private OutputStream mAccessoryOutputStream;
 
 	private SerialPort mSerialPort;
-
 	private SentenceReader mSentenceReader;
 	private InputStream mGPSInputStream;
+
 	private DataHandler mDataHandler;
 
 	private WakeLock mWakeLock;
@@ -67,11 +67,14 @@ public class FuelBehaviorActivity extends MapActivity {
 	private MapView mMapView;
 
 	private ArrayItemizedOverlay mItemizedOverlay;
-
 	private OverlayItem mOverlayItem;
 
-	private static final int MESSAGE_STRING = 1;
-	private static final int MESSAGE_RPM = 2;
+	private PeriodicUpdater mUpdater;
+
+	private static final byte MESSAGE_RPM = 0x1;
+	private static final byte MESSAGE_MPG = 0x2;
+	private static final byte MESSAGE_SPEED = 0x3;
+	private static final byte MESSAGE_ACCEL = 0x4;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -109,10 +112,7 @@ public class FuelBehaviorActivity extends MapActivity {
 				try {
 					ret = mAccessoryInputStream.read(buffer);
 				} catch (IOException e) {
-					Message m = Message.obtain(mHandler, MESSAGE_STRING);
-					Log.e(TAG, "read failed", e);
-					m.obj = "IOException";
-					mHandler.sendMessage(m);
+					Log.e(TAG, "accessory read failed", e);
 					break;
 				}
 
@@ -120,24 +120,51 @@ public class FuelBehaviorActivity extends MapActivity {
 				while (i < ret) {
 					int len = ret - i;
 
-					switch (buffer[i]) {
-					case 0x1:
-						if (len >= 4 && validateChecksum(buffer[i+1], buffer[i+2], buffer[i+3])) {
-							Message m = Message.obtain(mHandler, MESSAGE_RPM);
-							m.obj = new Integer(composeInt(buffer[i+1], buffer[i+2]));
-							mHandler.sendMessage(m);
-						}
-						i += 4;
-						break;
+					try {
+						switch (buffer[i]) {
+						case MESSAGE_RPM:
+							if (len >= 6) {
+								mDataHandler.setRpm(composeInt(buffer, i + 1));
+							}
+							i += 6;
+							break;
+						case MESSAGE_MPG:
+							if (len >= 6) {
+								mDataHandler.setMpg(composeInt(buffer, i + 1));
+							}
+							i += 6;
+							break;
+						case MESSAGE_SPEED:
+							if (len >= 6) {
+								mDataHandler.setObd2Speed(composeFloat(buffer, i + 1));
+							}
+							i += 6;
+							break;
+						case MESSAGE_ACCEL:
+							if (len >= 16) {
+								mDataHandler.setAcceleration(
+									composeFloat(buffer, i + 1),
+									composeFloat(buffer, i + 6),
+									composeFloat(buffer, i + 11));
+							}
+							i += 16;
+							break;
 
-					default:
-						Log.d(TAG, "unknown msg: " + buffer[i]);
+						default:
+							Log.d(TAG, "unknown msg: " + buffer[i]);
+							i = len;
+							break;
+						}
+					} catch (ChecksumException e) {
+						Log.d(TAG, "accessory read checksum failure", e);
 						i = len;
-						break;
 					}
 				}
 			}
 		}
+    }
+
+    private static class ChecksumException extends IOException {
     }
 
 	/** Called when the activity is first created. */
@@ -157,6 +184,8 @@ public class FuelBehaviorActivity extends MapActivity {
 		registerReceiver(mUsbReceiver, filter);
 
 		mDataHandler = new DataHandler();
+
+		mUpdater = new PeriodicUpdater(1000, this);
 
 		showControls();// should be hideControls, but I need to test the interface
 		//hideControls();
@@ -196,6 +225,8 @@ public class FuelBehaviorActivity extends MapActivity {
 		}
 
 		startGPS();
+
+		mUpdater.start();
 	}
 
 	@Override
@@ -205,6 +236,8 @@ public class FuelBehaviorActivity extends MapActivity {
 		if (mWakeLock.isHeld()) {
 			mWakeLock.release();
 		}
+
+		mUpdater.stop();
 
 		closeAccessory();
 		stopGPS();
@@ -279,21 +312,6 @@ public class FuelBehaviorActivity extends MapActivity {
 		}
 	}
 
-	Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case MESSAGE_STRING:
-				String s = (String) msg.obj;
-				handleStringMessage(s);
-				break;
-			case MESSAGE_RPM:
-				int v = (Integer) msg.obj;
-				setGauge(v);
-			}
-		}
-	};
-
 	public void hideControls() {
 		setContentView(R.layout.no_device);
 	}
@@ -320,13 +338,7 @@ public class FuelBehaviorActivity extends MapActivity {
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
-				handleStringMessage("Speed: " + mDataHandler.getSpeed() + " Course: " + mDataHandler.getCourse());
-
-				GeoPoint point = new GeoPoint(mDataHandler.getLatitude(), mDataHandler.getLongitude());
-				mOverlayItem.setPoint(point);
-				mItemizedOverlay.requestRedraw();
-				mMapController.setCenter(point);
+				updatePosition();
 			}
 		});
 
@@ -336,6 +348,10 @@ public class FuelBehaviorActivity extends MapActivity {
 				setGauge(30);
 			}
 		});
+	}
+
+	public void update() {
+		updatePosition();
 	}
 
 	public void sendCommand(byte[] command) {
@@ -358,6 +374,16 @@ public class FuelBehaviorActivity extends MapActivity {
 		gauge.setHandValue(value);
 	}
 
+	public void updatePosition() {
+		handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
+		handleStringMessage("Speed: " + mDataHandler.getGpsSpeed() + " Course: " + mDataHandler.getCourse());
+
+		GeoPoint point = new GeoPoint(mDataHandler.getLatitude(), mDataHandler.getLongitude());
+		mOverlayItem.setPoint(point);
+		mItemizedOverlay.requestRedraw();
+		mMapController.setCenter(point);
+	}
+
 	private void DisplayError(int resourceId) {
 		AlertDialog.Builder b = new AlertDialog.Builder(this);
 		b.setTitle("Error");
@@ -365,13 +391,46 @@ public class FuelBehaviorActivity extends MapActivity {
 		b.show();
 	}
 
-	private int composeInt(byte high, byte low) {
-		int val = ((int) high & 0xff) << 8;
-		val |= (int) low & 0xff;
-		return val;
+	/**
+	 * Returns an integer composed from the byte array. The first four bytes must be the integer
+	 * data in big-endian order, and the fifth bit must be the XOR of those bytes.
+	 *
+	 * @param bytes the byte array
+	 * @param offset the offset of the first byte to use
+	 * @return the integer
+	 * @throws ChecksumException if validation of the integer failed
+	 */
+	private static final int composeInt(byte[] bytes, int offset) throws ChecksumException {
+		validateChecksum(bytes, offset);
+		ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, 4);
+		return buffer.getInt();
 	}
 
-	private boolean validateChecksum(byte high, byte low, byte checksum) {
-		return (high ^ low) == checksum;
+	/**
+	 * Returns a float composed from the byte array. The first four bytes must be the float
+	 * data in IEEE-754 representation, and the fifth bit must be the XOR of those bytes.
+	 *
+	 * @param bytes the byte array
+	 * @param offset the offset of the first byte to use
+	 * @return the integer
+	 * @throws ChecksumException if validation of the float failed
+	 */
+	private static final float composeFloat(byte[] bytes, int offset) throws ChecksumException {
+		validateChecksum(bytes, offset);
+		ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, 4);
+		return buffer.getFloat();
+	}
+
+	/**
+	 * Validates that the XOR of the first four bytes in the array equals the fifth byte.
+	 *
+	 * @param bytes the byte array
+	 * @param offset the offset of the first byte to use
+	 * @throws ChecksumException if validation failed
+	 */
+	private static final void validateChecksum(byte[] bytes, int offset) throws ChecksumException {
+		if ((bytes[offset] ^ bytes[offset + 1] ^ bytes[offset + 2] ^ bytes[offset + 3]) != bytes[offset + 4]) {
+			throw new ChecksumException();
+		}
 	}
 }

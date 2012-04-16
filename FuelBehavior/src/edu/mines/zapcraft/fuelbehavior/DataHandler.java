@@ -1,5 +1,6 @@
 package edu.mines.zapcraft.FuelBehavior;
 
+import android.util.Log;
 import net.sf.marineapi.nmea.event.SentenceEvent;
 import net.sf.marineapi.nmea.event.SentenceListener;
 import net.sf.marineapi.nmea.sentence.GGASentence;
@@ -12,11 +13,38 @@ import net.sf.marineapi.nmea.util.Position;
 public class DataHandler implements SentenceListener {
 	private static final String TAG = DataHandler.class.getSimpleName();
 
+	// GPS data
 	private double latitude;
 	private double longitude;
 	private double altitude;
-	private double speed;
+	private double gpsSpeed;
 	private double course;
+
+	// Engine data
+	private float mpg;
+	private float rpm;
+	private float obd2Speed;
+
+	// Accelerometer data
+	private float xAccel, yAccel, zAccel;
+
+	public void setMpg(float mpg) {
+		this.mpg = mpg;
+	}
+
+	public void setRpm(float rpm) {
+		this.rpm = rpm;
+	}
+
+	public void setObd2Speed(float obd2Speed) {
+		this.obd2Speed = obd2Speed;
+	}
+
+	public synchronized void setAcceleration(float xAccel, float yAccel, float zAccel) {
+		this.xAccel = xAccel;
+		this.yAccel = yAccel;
+		this.zAccel = zAccel;
+	}
 
 	@Override
 	public void readingPaused() {
@@ -31,8 +59,10 @@ public class DataHandler implements SentenceListener {
 	}
 
 	@Override
-	public void sentenceRead(SentenceEvent sentenceEvent) {
+	public synchronized void sentenceRead(SentenceEvent sentenceEvent) {
 		Sentence sentence = sentenceEvent.getSentence();
+
+		Log.d(TAG, "Received GPS sentence: " + sentence.toSentence());
 
 		if (sentence instanceof GGASentence) {
 			Position position = ((GGASentence) sentence).getPosition();
@@ -40,7 +70,7 @@ public class DataHandler implements SentenceListener {
 			altitude = position.getAltitude();
 		} else if (sentence instanceof RMCSentence) {
 			setLatLon(((RMCSentence) sentence).getPosition());
-			speed = ((RMCSentence) sentence).getSpeed();
+			gpsSpeed = ((RMCSentence) sentence).getSpeed();
 			course = ((RMCSentence) sentence).getCourse();
 		}
 	}
@@ -53,7 +83,6 @@ public class DataHandler implements SentenceListener {
 	public double getLatitude() {
 		return latitude;
 	}
-
 
 	/**
 	 * Returns the longitude in degrees.
@@ -74,12 +103,12 @@ public class DataHandler implements SentenceListener {
 	}
 
 	/**
-	 * Returns the speed in kilometers per hour.
+	 * Returns the speed in kilometers per hour as reported by the GPS.
 	 *
-	 * @return the speed in kilometers per hour
+	 * @return the speed in kilometers per hour as reported by the GPS
 	 */
-	public double getSpeed() {
-		return speed * 1.852;
+	public double getGpsSpeed() {
+		return gpsSpeed * 1.852;
 	}
 
 	/**
@@ -90,6 +119,38 @@ public class DataHandler implements SentenceListener {
 	public double getCourse() {
 		return course;
 	}
+
+	public double getMpg() {
+		return mpg;
+	}
+
+	public double getRpm() {
+		return rpm;
+	}
+
+	/**
+	 * Returns the speed in kilometers per hour as reported by the engine.
+	 *
+	 * @return the speed in kilometers per hour as reported by the engine
+	 */
+	public double getObd2Speed() {
+		return obd2Speed;
+	}
+
+	public double getXAccel() {
+		return xAccel;
+	}
+
+
+	public double getYAccel() {
+		return yAccel;
+	}
+
+
+	public double getZAccel() {
+		return zAccel;
+	}
+
 
 	private void setLatLon(Position position) {
 		latitude = position.getLatHemisphere() == CompassPoint.NORTH ? position.getLatitude() : -position.getLatitude();
