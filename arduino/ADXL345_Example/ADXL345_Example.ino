@@ -11,102 +11,53 @@ void setup(){
   Serial.begin(9600);
   //Serial.println("something working");
   adxl.powerOn();
+  delay(500);  // Slight delay for power up
+  adxl.setRangeSetting(2);  // set range to +-2g
+  adxl.setRate(100);        // set sampling rate to 100 Hz
+  calibrate();
 
-  //set activity/ inactivity thresholds (0-255)
-  adxl.setActivityThreshold(75); //62.5mg per increment
-  adxl.setInactivityThreshold(75); //62.5mg per increment
-  adxl.setTimeInactivity(10); // how many seconds of no activity is inactive?
- 
-  //look of activity movement on this axes - 1 == on; 0 == off 
-  adxl.setActivityX(1);
-  adxl.setActivityY(1);
-  adxl.setActivityZ(1);
- 
-  //look of inactivity movement on this axes - 1 == on; 0 == off
-  adxl.setInactivityX(1);
-  adxl.setInactivityY(1);
-  adxl.setInactivityZ(1);
- 
-  //look of tap movement on this axes - 1 == on; 0 == off
-  adxl.setTapDetectionOnX(0);
-  adxl.setTapDetectionOnY(0);
-  adxl.setTapDetectionOnZ(1);
- 
-  //set values for what is a tap, and what is a double tap (0-255)
-  adxl.setTapThreshold(50); //62.5mg per increment
-  adxl.setTapDuration(15); //625μs per increment
-  adxl.setDoubleTapLatency(80); //1.25ms per increment
-  adxl.setDoubleTapWindow(200); //1.25ms per increment
- 
-  //set values for what is considered freefall (0-255)
-  adxl.setFreeFallThreshold(7); //(5 - 9) recommended - 62.5mg per increment
-  adxl.setFreeFallDuration(45); //(20 - 70) recommended - 5ms per increment
- 
-  //setting all interupts to take place on int pin 1
-  //I had issues with int pin 2, was unable to reset it
-  adxl.setInterruptMapping( ADXL345_INT_SINGLE_TAP_BIT,   ADXL345_INT1_PIN );
-  adxl.setInterruptMapping( ADXL345_INT_DOUBLE_TAP_BIT,   ADXL345_INT1_PIN );
-  adxl.setInterruptMapping( ADXL345_INT_FREE_FALL_BIT,    ADXL345_INT1_PIN );
-  adxl.setInterruptMapping( ADXL345_INT_ACTIVITY_BIT,     ADXL345_INT1_PIN );
-  adxl.setInterruptMapping( ADXL345_INT_INACTIVITY_BIT,   ADXL345_INT1_PIN );
- 
-  //register interupt actions - 1 == on; 0 == off  
-  adxl.setInterrupt( ADXL345_INT_SINGLE_TAP_BIT, 1);
-  adxl.setInterrupt( ADXL345_INT_DOUBLE_TAP_BIT, 1);
-  adxl.setInterrupt( ADXL345_INT_FREE_FALL_BIT,  1);
-  adxl.setInterrupt( ADXL345_INT_ACTIVITY_BIT,   1);
-  adxl.setInterrupt( ADXL345_INT_INACTIVITY_BIT, 1);
-  //Serial.println("ON!!!");
 }
 
 void loop(){
-  
-  //Boring accelerometer stuff   
-  int x,y,z;  
-  adxl.readAccel(&x, &y, &z); //read the accelerometer values and store them in variables  x,y,z
+  double x,y,z;  
+  adxl.get_Gxyz(&x, &y, &z); //read the accelerometer values and store them in variables  x,y,z
 
   // Output x,y,z values - Commented out
-  //Serial.print(x);
-  //Serial.print(y);
-  //Serial.println(z);
+  Serial.print(x);
+  Serial.print(", ");
+  Serial.print(y);
+  Serial.print(", ");
+  Serial.println(z);
 
+  delay(400);
+}
 
-  //Fun Stuff!    
-  //read interrupts source and look for triggerd actions
-  
-  //getInterruptSource clears all triggered actions after returning value
-  //so do not call again until you need to recheck for triggered actions
-   byte interrupts = adxl.getInterruptSource();
-  
-  // freefall
-  if(adxl.triggered(interrupts, ADXL345_FREE_FALL)){
-    Serial.println("freefall");
-    //add code here to do when freefall is sensed
-  } 
-  
-  //inactivity
-  if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
-    Serial.println("inactivity");
-     //add code here to do when inactivity is sensed
-  }
-  
-  //activity
-  if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
-    Serial.println("activity"); 
-     //add code here to do when activity is sensed
-  }
-  
-  //double tap
-  if(adxl.triggered(interrupts, ADXL345_DOUBLE_TAP)){
-    Serial.println("double tap");
-     //add code here to do when a 2X tap is sensed
-  }
-  
-  //tap
-  if(adxl.triggered(interrupts, ADXL345_SINGLE_TAP)){
-    Serial.println("tap");
-     //add code here to do when a tap is sensed
-  } 
-
- 
+void calibrate(){
+    double xcal = 0.0;
+    double ycal = 0.0;
+    double zcal = 0.0;
+    double xtest, ytest, ztest;
+    char xoff, yoff, zoff;
+    
+    // Grab 30 samples from each axis and average them to remove offset
+    for(int j = 0; j < 30; j++){
+      adxl.get_Gxyz(&xtest, &ytest, &ztest);
+      xcal += xtest;
+      ycal += ytest;
+      zcal += ztest;
+      delay(20);      
+    }
+    xcal /= 30.0;
+    ycal /= 30.0;
+    zcal /= 30.0;
+    
+    // Calibration assumes that x = 0g, y = 0g, and z = 1g at rest
+    zcal -= 1.0;
+    
+    // offsets are calculated using 0.0156 g/LSB scaling factor
+    // and negated because offsets are added for the ADXL345 and values taken earlier are positive
+    xoff = -(byte)(xcal / .0156);
+    yoff = -(byte)(ycal / .0156);
+    zoff = -(byte)(zcal / .0156);
+    adxl.setAxisOffset(xoff, yoff, zoff);
 }

@@ -13,7 +13,9 @@ Hardware interface driver
 #include <Usb.h>
 #include <AndroidAccessory.h>
 #include <SPI.h>
+#include <Wire.h>
 #include <stdio.h>
+#include <ADXL345.h>
 
 #define STRLEN  40
 #define NUL     '\0'
@@ -21,11 +23,7 @@ Hardware interface driver
 #define PROMPT  '>'  // end character from ELM
 #define DATA    1    // data with no cr/prompt
 
-// [CONFIRMED] For gas car use 3355 (1/14.7/730*3600)*10000 (from OBDuino project)
-#define GasConst 3355 
-#define GasMafConst 107310 // 14.7*730*10
-#define FuelAdjust 100
-#define InstantConst 0.6533737  // 3785411/(3600*1000*1.609344)
+// Constants for calculating fuel economy
 #define R_AIR 287 // [J/kg/K]
 #define ENG_DIS 0.001901   // Engine displacement in m^3
 #define VOL_EFF 0.8  // volumetric efficiency of engine, say 80%
@@ -53,10 +51,7 @@ char versionNumber[] = "1.0";
 char serialNumber[] = "1";
 char url[] = "google.com"; // the URL of your app online
 
-char initialize[] = "ATSP0";
-
-// Function prototypes
-
+/********** Function prototypes **********/
 // ELM chip interface stuff
 void elm_write(char *str);
 byte elm_read(char *str, byte size);
@@ -81,11 +76,16 @@ void accu_trip();
 AndroidAccessory accessory(companyName, applicationName,
 accessoryName,versionNumber,url,serialNumber);
 
+// Initialize accelerometer object
+ADXL345 accel;
+
 void setup() {
   // initialize serial ports 0 (serial 1 initialized in ELM function
   Serial.begin(9600);
   // Start USB connection to Android device
   accessory.powerOn();
+  // Start connection to accelerometer
+  accel.powerOn();
   // Initialize ELM chip
   elm_init();
 }
@@ -323,6 +323,7 @@ void accu_trip()
        maf = get_airflow();
     }
     else{
+       // No MAF found if we end up here
        // Declare Variable Inputs       
        long imap, rpm, manp, iat;
        
@@ -336,59 +337,30 @@ void accu_trip()
 
        // Calculate Mass Air Flow, uses scaling factor of 0.12
        maf=(rpm*manp*VOL_EFF*ENG_DIS)/(0.12*iat*R_AIR); //[g/sec]
-       
-       
+      
        /*
        No MAF found if we go here
-  
-       No MAF (Uses MAP and Absolute Temp to approximate MAF):
-       IMAP = RPM * MAP / IAT
-       MAF = (IMAP/120)*(VE/100)*(ED)*(MM)/(R)
-       MAP - Manifold Absolute Pressure in kPa
-       IAT - Intake Air Temperature in Kelvin
-       R - Specific Gas Constant (8.314472 J/(mol.K)
-       MM - Average molecular mass of air (28.9644 g/mol)
-       VE - volumetric efficiency measured in percent, let's say 80%
-       ED - Engine Displacement in liters
-       This method requires tweaking of the VE for accuracy.
+       rpm - engine RPM
+       manp - manifold pressure in pascals
+       VOL_EFF - volumetric efficiency of engine as a ratio
+       ENG_DIS - engine displacement in m^3
+       iat - intake air temperature in Kelvin
+       R_AIR - ideal gas constant for air
        */
-
-//     double R1=8.314;
-//     double R2=287.04;
-//     double mm=28.9644;       
-//       imap=(rpm*manp)/(iat);
-       // does not divide by 100 at the end because we use (MAF*100) in formula
-       // but divide by 10 because engine displacement is in dL
-       // imap * VE * ED * MM / (120 * 100 * R * 10) = 0.0020321
-       // ex: VSS=80km/h, MAP=64kPa, RPM=1800, IAT=21C
-       //     engine=2.2L, efficiency=70%
-       // maf = ( (1800*64)/(21+273) * 22 * 20 ) / 100
-       // maf = 17.24 g/s which is about right at 80km/h
-//       maf=(imap/120)*(ve)*(ed)/(R2);
-  
 
     }
   }
   
-  // we want fuel used in uL
-  // maf gives grams of air/s
-  // divide by 100 because our MAF return is not divided!
-  // divide by 14.7 (a/f ratio) to have grams of fuel/s
-  // divide by 730 to have L/s
-  // mul by 1000000 to have uL/s
-  // divide by 1000 because delta_time is in ms
-  //delta_fuel=(maf*FuelAdjust*delta_time) / GasMafConst;
-  
+  // Get fuel flow rate in gallons/sec  
   fuel_flowrate = maf*0.000092502;// [gallons/sec]
   
+  // Get instantaneous fuel economy in MPG
   instantfuel = (delta_dist)/(fuel_flowrate*delta_time*160.9344);// [mpg]
   
-  // test function for instantaneous fuel economy
-  // vss is in km/hour, delta_time is in ms, delta_fuel is in uL
-  // divide by 1000 because delta_time is in ms, divide by 3600
-  // because vss is in km/hour, divide by 1.609344 km/mi,
-  // multiply by 3785411 microliters per gallon
-  
-  //instantfuel = (vss*delta_time*InstantConst) / delta_fuel;
+  /*
+  delta_dist - distance traveled in last loop in cm
+  fuel_flowrate - current fuel flow rate in gallons/sec
+  delta_time - time for last loop in ms
+  */
 }
 
