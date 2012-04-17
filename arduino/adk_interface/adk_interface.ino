@@ -116,7 +116,7 @@ void loop()
   if (millis() - timer > 50) { // send 20 times per second
     if(accessory.isConnected()) {
       sprintf(msg, "RPM %d", get_rpm());
-      accessory.print(msg);
+      accessory.println(msg);
 
       sprintf(msg, "MPG %f", instantfuel);
       accessory.println(msg);
@@ -129,7 +129,7 @@ void loop()
 
       /*
       accel.get_Gxyz(&x, &y, &z);
-      sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
+      sprintf(msg, "ACCEL %f %f %f", x, y, z);
       accessory.println(msg);
       */
     }
