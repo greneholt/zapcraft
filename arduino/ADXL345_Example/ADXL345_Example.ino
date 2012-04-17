@@ -13,7 +13,7 @@ void setup(){
   adxl.powerOn();
   delay(500);  // Slight delay for power up
   adxl.setRangeSetting(2);  // set range to +-2g
-  adxl.setRate(100);        // set sampling rate to 100 Hz
+  adxl.setRate(200);        // set sampling rate to 200 Hz
   calibrate();
 
 }
