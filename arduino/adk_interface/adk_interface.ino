@@ -6,6 +6,10 @@ Some ELM interface code taken from OBDuino project, open source
 
 Hardware interface driver
 */
+
+typedef uint8_t byte; // compatability with broken libraries. Arduino 1.0 is very broken.
+
+#include <stdio.h>
 #include <ch9.h>
 #include <Max3421e.h>
 #include <Max3421e_constants.h>
@@ -14,7 +18,6 @@ Hardware interface driver
 #include <AndroidAccessory.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <stdio.h>
 #include <ADXL345.h>
 
 #define STRLEN  40
@@ -74,53 +77,103 @@ void accu_trip();
 
 // initialize ADK as an Android accessory:
 AndroidAccessory accessory(companyName, applicationName,
-accessoryName,versionNumber,url,serialNumber);
+                           accessoryName,versionNumber,url,serialNumber);
 
 // Initialize accelerometer object
 ADXL345 accel;
 
-void setup() {
+void setup()
+{
   // initialize serial ports 0 (serial 1 initialized in ELM function
   Serial.begin(9600);
   // Start USB connection to Android device
   accessory.powerOn();
+
   // Start connection to accelerometer
+  /*
   accel.powerOn();
+  delay(500);  // Slight delay for power up
+  accel.setRangeSetting(2);  // set range to +-2g
+  accel.setRate(100);        // set sampling rate to 100 Hz
+  calibrate_accel();
+  */
+
   // Initialize ELM chip
   elm_init();
 }
 
 void loop()
 {
-  int param = 0;  // For holding requested parameter
-  accu_trip();   
-  char msg[10];
-  
-//  sprintf_P(msg,"%f\n",instantfuel);
-  
-  if(accessory.isConnected()){
-      int len = accessory.readBytes(msg, sizeof(msg));
-      switch(msg[0]){
-          case '0':
-          param = get_rpm();
-          sprintf(msg,"%d\n",param);
-          accessory.write((uint8_t*)msg, sizeof(msg));
-          break;
-          default:
-          break;
-      }
+  char msg[40];
+  double x, y, z;
+
+  accu_trip();
+
+  static long timer = millis();
+
+  // sprintf_P(msg,"%f\n",instantfuel);
+
+  if (millis() - timer > 50) { // send 20 times per second
+    if(accessory.isConnected()) {
+      sprintf(msg, "RPM %d", get_rpm());
+      accessory.print(msg);
+
+      sprintf(msg, "MPG %f", instantfuel);
+      accessory.println(msg);
+
+      sprintf(msg, "THROTTLE %d", get_throttle());
+      accessory.println(msg);
+
+      sprintf(msg, "SPEED %d", get_speed());
+      accessory.println(msg);
+
+      /*
+      accel.get_Gxyz(&x, &y, &z);
+      sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
+      accessory.println(msg);
+      */
+    }
   }
-  sprintf(msg,"SPEED%d\n",get_speed());
-  accessory.println(msg);
 }
 
+void calibrate_accel()
+{
+  double xcal = 0.0;
+  double ycal = 0.0;
+  double zcal = 0.0;
+  double xtest, ytest, ztest;
+  char xoff, yoff, zoff;
 
+  // Grab 30 samples from each axis and average them to remove offset
+  for(int j = 0; j < 30; j++) {
+    accel.get_Gxyz(&xtest, &ytest, &ztest);
+    xcal += xtest;
+    ycal += ytest;
+    zcal += ztest;
+    delay(20);
+  }
+
+  xcal /= 30.0;
+  ycal /= 30.0;
+  zcal /= 30.0;
+
+  // Calibration assumes that x = 0g, y = 0g, and z = 1g at rest
+  zcal -= 1.0;
+
+  // offsets are calculated using 0.0156 g/LSB scaling factor
+  // and negated because offsets are added for the ADXL345 and values taken earlier are positive
+  xoff = -(byte)(xcal / .0156);
+  yoff = -(byte)(ycal / .0156);
+  zoff = -(byte)(zcal / .0156);
+  accel.setAxisOffset(xoff, yoff, zoff);
+}
 
 // Function to write to ELM device
 void elm_write(char *str)
 {
-  while(*str!=NUL)
+  while(*str!=NUL) {
     Serial1.write(*str++);
+  }
 }
 
 /* each ELM response ends with '\r' followed at the end by the prompt
@@ -132,16 +185,18 @@ byte elm_read(char *str, byte size)
   char str2[8];
   // wait for something on com port
   i=0;
-  while((b=Serial1.read())!=PROMPT && i<size)
-	if( b>=' ')
-		str[i++]=b;
-  if(i!=size)  // we got a prompt
-  {
+  while((b=Serial1.read()) != PROMPT && i<size) {
+    if( b>=' ') {
+      str[i++]=b;
+    }
+  }
+
+  if(i!=size) { // we got a prompt
     str[i]=NUL;  // replace CR by NUL
     return PROMPT;
-  }
-  else
+  } else {
     return DATA;
+  }
 }
 
 // Initialization function to reset ELM chip and check operation
@@ -183,8 +238,9 @@ byte elm_compact_response(byte *buf, char *str)
   // return buf: 0x1AF8
   i=0;
   str+=6;
-  while(*str!=NUL)
+  while(*str!=NUL) {
     buf[i++]=strtoul(str, &str, 16);
+  }
   return i;
 }
 
@@ -252,7 +308,8 @@ int get_iat()
 }
 
 // Function to connect to computer
-void establishContact() {
+void establishContact()
+{
   while (Serial.available() <= 0) {
     Serial.print('A');   // send a capital A
     delay(300);
@@ -260,7 +317,7 @@ void establishContact() {
 }
 
 // Function which gets the fuel-metering mode of the car
-// closed loop, normal open-loop, open-loop because of 
+// closed loop, normal open-loop, open-loop because of
 // problems, etc
 unsigned char get_fuel_status()
 {
@@ -292,71 +349,70 @@ void accu_trip()
   unsigned long time_now, delta_time;
   unsigned long delta_dist, delta_fuel;
   unsigned long fuel_flowrate;
-  
+
   // time elapsed
   time_now = millis();
   delta_time = (long)(time_now - old_time); //must take care of rollover
   old_time = time_now;
 
   // Get distance traveled in this loop in cm
-  vss = get_speed();  
+  vss = get_speed();
   delta_dist=((long)vss*delta_time)/36;
 
   // Check throttle position to see if car is coasting
   throttle_pos = (byte)get_throttle();
-  if(throttle_pos<min_throttle_pos && throttle_pos != 0) //And make sure its not '0' returned by no response in read byte function
-      min_throttle_pos=throttle_pos;
-  
+  if(throttle_pos<min_throttle_pos && throttle_pos != 0) { //And make sure its not '0' returned by no response in read byte function
+    min_throttle_pos=throttle_pos;
+  }
+
   // Check if car is in open loop fuel mode
-  fuel_status = get_fuel_status();    
+  fuel_status = get_fuel_status();
   open_loop = (fuel_status & 0x04) ? 1 : 0;
-  
+
   // check to see if throttle position is within a certain bound of minimum throttle
   // if it is, assume we are coasting
-  if(throttle_pos<(min_throttle_pos+4) && open_loop)
-  {
+  if(throttle_pos<(min_throttle_pos+4) && open_loop) {
     maf=0;  // decelerate fuel cut-off, fake the MAF as 0
   }
-  
-  else{
-    if(uses_maf()){
-       maf = get_airflow();
-    }
-    else{
-       // No MAF found if we end up here
-       // Declare Variable Inputs       
-       long imap, rpm, manp, iat;
-       
-       // Get OBD-II Variable Inputs
-       // Manifold Ambient Pressure
-       manp = get_map()*1000;// [Pa]
-       // Revolutions Per Minute
-       rpm = get_rpm();// [Rev/min]
-       // Intake Ambient Temperature
-       iat = get_iat() + 273;  // [K]
 
-       // Calculate Mass Air Flow, uses scaling factor of 0.12
-       maf=(rpm*manp*VOL_EFF*ENG_DIS)/(0.12*iat*R_AIR); //[g/sec]
-      
-       /*
-       No MAF found if we go here
-       rpm - engine RPM
-       manp - manifold pressure in pascals
-       VOL_EFF - volumetric efficiency of engine as a ratio
-       ENG_DIS - engine displacement in m^3
-       iat - intake air temperature in Kelvin
-       R_AIR - ideal gas constant for air
-       */
+  else {
+    if(uses_maf()) {
+      maf = get_airflow();
+    } else {
+      // No MAF found if we end up here
+      // Declare Variable Inputs
+      long imap, rpm, manp, iat;
+
+      // Get OBD-II Variable Inputs
+      // Manifold Ambient Pressure
+      manp = get_map()*1000;// [Pa]
+      // Revolutions Per Minute
+      rpm = get_rpm();// [Rev/min]
+      // Intake Ambient Temperature
+      iat = get_iat() + 273;  // [K]
+
+      // Calculate Mass Air Flow, uses scaling factor of 0.12
+      maf=(rpm*manp*VOL_EFF*ENG_DIS)/(0.12*iat*R_AIR); //[g/sec]
+
+      /*
+      No MAF found if we go here
+      rpm - engine RPM
+      manp - manifold pressure in pascals
+      VOL_EFF - volumetric efficiency of engine as a ratio
+      ENG_DIS - engine displacement in m^3
+      iat - intake air temperature in Kelvin
+      R_AIR - ideal gas constant for air
+      */
 
     }
   }
-  
-  // Get fuel flow rate in gallons/sec  
+
+  // Get fuel flow rate in gallons/sec
   fuel_flowrate = maf*0.000092502;// [gallons/sec]
-  
+
   // Get instantaneous fuel economy in MPG
   instantfuel = (delta_dist)/(fuel_flowrate*delta_time*160.9344);// [mpg]
-  
+
   /*
   delta_dist - distance traveled in last loop in cm
   fuel_flowrate - current fuel flow rate in gallons/sec
