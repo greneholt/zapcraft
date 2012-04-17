@@ -14,36 +14,36 @@ public class DataHandler implements SentenceListener {
 	private static final String TAG = DataHandler.class.getSimpleName();
 
 	// GPS data
-	private double latitude;
-	private double longitude;
-	private double altitude;
-	private double gpsSpeed;
-	private double course;
+	private double mLatitude;
+	private double mLongitude;
+	private double mAltitude = Double.NaN; // altitude data may not always be available
+	private double mGpsSpeed;
+	private double mCourse;
 
 	// Engine data
-	private float mpg;
-	private float rpm;
-	private float obd2Speed;
+	private float mMpg;
+	private float mRpm;
+	private float mObd2Speed;
 
 	// Accelerometer data
-	private float xAccel, yAccel, zAccel;
+	private float mXAccel, mYAccel, mZAccel;
 
 	public void setMpg(float mpg) {
-		this.mpg = mpg;
+		mMpg = mpg;
 	}
 
 	public void setRpm(float rpm) {
-		this.rpm = rpm;
+		mRpm = rpm;
 	}
 
 	public void setObd2Speed(float obd2Speed) {
-		this.obd2Speed = obd2Speed;
+		mObd2Speed = obd2Speed;
 	}
 
 	public synchronized void setAcceleration(float xAccel, float yAccel, float zAccel) {
-		this.xAccel = xAccel;
-		this.yAccel = yAccel;
-		this.zAccel = zAccel;
+		mXAccel = xAccel;
+		mYAccel = yAccel;
+		mZAccel = zAccel;
 	}
 
 	@Override
@@ -67,11 +67,11 @@ public class DataHandler implements SentenceListener {
 		if (sentence instanceof GGASentence) {
 			Position position = ((GGASentence) sentence).getPosition();
 			setLatLon(position);
-			altitude = position.getAltitude();
+			mAltitude = position.getAltitude();
 		} else if (sentence instanceof RMCSentence) {
 			setLatLon(((RMCSentence) sentence).getPosition());
-			gpsSpeed = ((RMCSentence) sentence).getSpeed();
-			course = ((RMCSentence) sentence).getCourse();
+			mGpsSpeed = ((RMCSentence) sentence).getSpeed();
+			mCourse = ((RMCSentence) sentence).getCourse();
 		}
 	}
 
@@ -81,7 +81,7 @@ public class DataHandler implements SentenceListener {
 	 * @return the latitude in degrees
 	 */
 	public double getLatitude() {
-		return latitude;
+		return mLatitude;
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class DataHandler implements SentenceListener {
 	 * @return the longitude in degrees
 	 */
 	public double getLongitude() {
-		return longitude;
+		return mLongitude;
 	}
 
 	/**
@@ -99,7 +99,7 @@ public class DataHandler implements SentenceListener {
 	 * @return the altitude in meters above sea level
 	 */
 	public double getAltitude() {
-		return altitude;
+		return mAltitude;
 	}
 
 	/**
@@ -108,7 +108,7 @@ public class DataHandler implements SentenceListener {
 	 * @return the speed in kilometers per hour as reported by the GPS
 	 */
 	public double getGpsSpeed() {
-		return gpsSpeed * 1.852;
+		return mGpsSpeed * 1.852;
 	}
 
 	/**
@@ -117,15 +117,15 @@ public class DataHandler implements SentenceListener {
 	 * @return the current course in degrees from true north
 	 */
 	public double getCourse() {
-		return course;
+		return mCourse;
 	}
 
 	public double getMpg() {
-		return mpg;
+		return mMpg;
 	}
 
 	public double getRpm() {
-		return rpm;
+		return mRpm;
 	}
 
 	/**
@@ -134,26 +134,25 @@ public class DataHandler implements SentenceListener {
 	 * @return the speed in kilometers per hour as reported by the engine
 	 */
 	public double getObd2Speed() {
-		return obd2Speed;
+		return mObd2Speed;
 	}
 
 	public double getXAccel() {
-		return xAccel;
+		return mXAccel;
 	}
 
 
 	public double getYAccel() {
-		return yAccel;
+		return mYAccel;
 	}
 
 
 	public double getZAccel() {
-		return zAccel;
+		return mZAccel;
 	}
 
-
 	private void setLatLon(Position position) {
-		latitude = position.getLatHemisphere() == CompassPoint.NORTH ? position.getLatitude() : -position.getLatitude();
-		longitude = position.getLonHemisphere() == CompassPoint.EAST ? position.getLongitude() : -position.getLongitude();
+		mLatitude = position.getLatHemisphere() == CompassPoint.NORTH ? position.getLatitude() : -position.getLatitude();
+		mLongitude = position.getLonHemisphere() == CompassPoint.EAST ? position.getLongitude() : -position.getLongitude();
 	}
 }

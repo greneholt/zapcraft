@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
@@ -69,7 +68,14 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private ArrayItemizedOverlay mItemizedOverlay;
 	private OverlayItem mOverlayItem;
 
+	private DbAdapter mDbAdapter;
+
+	private DataLogger mDataLogger;
+
 	private PeriodicUpdater mUpdater;
+
+	private boolean mControlsVisible;
+	private boolean mLoggingEnabled;
 
 	private static final byte MESSAGE_RPM = 0x1;
 	private static final byte MESSAGE_MPG = 0x2;
@@ -101,7 +107,7 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		}
 	};
 
-    private class ADKThread extends Thread {
+	private class ADKThread extends Thread {
     	@Override
     	public void run() {
 			int ret = 0;
@@ -183,20 +189,34 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
-		mDataHandler = new DataHandler();
+		mDbAdapter = new DbAdapter(this);
+        mDbAdapter.open();
 
+		mDataHandler = new DataHandler();
 		mUpdater = new PeriodicUpdater(1000, this);
+
+		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
 		showControls();// should be hideControls, but I need to test the interface
 		//hideControls();
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-    }
+	public void onPause() {
+		super.onPause();
 
-    @Override
+		if (mWakeLock.isHeld()) {
+			mWakeLock.release();
+		}
+
+		mUpdater.stop();
+		mDataLogger.stop();
+
+		closeAccessory();
+		stopGPS();
+	}
+
+	@Override
 	public void onResume() {
 		super.onResume();
 
@@ -226,21 +246,13 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 
 		startGPS();
 
-		mUpdater.start();
-	}
-
-	@Override
-	public void onPause() {
-		super.onPause();
-
-		if (mWakeLock.isHeld()) {
-			mWakeLock.release();
+		if (mControlsVisible) {
+			mUpdater.start();
 		}
 
-		mUpdater.stop();
-
-		closeAccessory();
-		stopGPS();
+		if (mLoggingEnabled) {
+			mDataLogger.start();
+		}
 	}
 
 	@Override
@@ -261,6 +273,9 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			thread.start();
 			Log.d(TAG, "accessory opened");
 			showControls();
+
+			mLoggingEnabled = true;
+			mDataLogger.start();
 		} else {
 			Log.d(TAG, "accessory open fail");
 		}
@@ -268,6 +283,9 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 
 	private void closeAccessory() {
 		hideControls();
+
+		mLoggingEnabled = false;
+		mDataLogger.stop();
 
 		try {
 			if (mAccessoryFileDescriptor != null) {
@@ -313,6 +331,8 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	}
 
 	public void hideControls() {
+		mControlsVisible = false;
+		mUpdater.stop();
 		setContentView(R.layout.no_device);
 	}
 
@@ -348,6 +368,9 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 				setGauge(30);
 			}
 		});
+
+		mControlsVisible = true;
+		mUpdater.start();
 	}
 
 	public void update() {

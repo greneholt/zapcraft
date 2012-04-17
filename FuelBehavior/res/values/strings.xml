@@ -5,5 +5,4 @@
     <string name="read_gps">Read GPS</string>
     <string name="error_gps_security">Permissions incorrect for /dev/ttyUSB0 to access GPS</string>
     <string name="error_gps_ioexception">An IOException occurred when communicating with the GPS</string>
-
 </resources>
