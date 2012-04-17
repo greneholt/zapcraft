@@ -3,6 +3,7 @@ package edu.mines.zapcraft.FuelBehavior;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -28,6 +29,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import java.util.Calendar;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
@@ -75,7 +78,6 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private PeriodicUpdater mUpdater;
 
 	private boolean mControlsVisible;
-	private boolean mLoggingEnabled;
 
 	private static final byte MESSAGE_RPM = 0x1;
 	private static final byte MESSAGE_MPG = 0x2;
@@ -197,26 +199,15 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
+		ContentValues values = new ContentValues();
+		values.put("time", Calendar.getInstance().getTimeInMillis());
+		mDataLogger.setDriveId(mDbAdapter.createDrive(values));
+
 		showControls();// should be hideControls, but I need to test the interface
 		//hideControls();
     }
 
     @Override
-	public void onPause() {
-		super.onPause();
-
-		if (mWakeLock.isHeld()) {
-			mWakeLock.release();
-		}
-
-		mUpdater.stop();
-		mDataLogger.stop();
-
-		closeAccessory();
-		stopGPS();
-	}
-
-	@Override
 	public void onResume() {
 		super.onResume();
 
@@ -249,10 +240,20 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		if (mControlsVisible) {
 			mUpdater.start();
 		}
+	}
 
-		if (mLoggingEnabled) {
-			mDataLogger.start();
+	@Override
+	public void onPause() {
+		super.onPause();
+
+		if (mWakeLock.isHeld()) {
+			mWakeLock.release();
 		}
+
+		mUpdater.stop();
+
+		closeAccessory();
+		stopGPS();
 	}
 
 	@Override
@@ -274,7 +275,6 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			Log.d(TAG, "accessory opened");
 			showControls();
 
-			mLoggingEnabled = true;
 			mDataLogger.start();
 		} else {
 			Log.d(TAG, "accessory open fail");
@@ -284,7 +284,6 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private void closeAccessory() {
 		hideControls();
 
-		mLoggingEnabled = false;
 		mDataLogger.stop();
 
 		try {

@@ -13,9 +13,6 @@ public class DbAdapter {
     private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
 
-    /**
-     * Database creation SQL statement
-     */
     private static final String DATABASE_CREATE =
         "CREATE TABLE drives (" +
 		"	_id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -78,7 +75,7 @@ public class DbAdapter {
     }
 
     /**
-     * Open the notes database. If it cannot be opened, try to create a new
+     * Open the database. If it cannot be opened, try to create a new
      * instance of the database. If it cannot be created, throw an exception to
      * signal the failure
      *
