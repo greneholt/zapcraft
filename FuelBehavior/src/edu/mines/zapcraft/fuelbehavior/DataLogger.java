@@ -30,6 +30,7 @@ public class DataLogger implements Updatable {
 		values.put("gpsSpeed", mDataHandler.getGpsSpeed());
 		values.put("course", mDataHandler.getCourse());
 		values.put("mpg", mDataHandler.getMpg());
+		values.put("throttle", mDataHandler.getThrottle());
 		values.put("rpm", mDataHandler.getRpm());
 		values.put("obd2Speed", mDataHandler.getObd2Speed());
 		values.put("xAccel", mDataHandler.getXAccel());

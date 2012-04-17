@@ -20,8 +20,6 @@ import android_serialport_api.SerialPort;
 import com.android.future.usb.UsbAccessory;
 import com.android.future.usb.UsbManager;
 
-import java.nio.ByteBuffer;
-
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -61,6 +59,8 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private SentenceReader mSentenceReader;
 	private InputStream mGPSInputStream;
 
+	private AdkReader mAdkReader;
+
 	private DataHandler mDataHandler;
 
 	private WakeLock mWakeLock;
@@ -78,11 +78,6 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	private PeriodicUpdater mUpdater;
 
 	private boolean mControlsVisible;
-
-	private static final byte MESSAGE_RPM = 0x1;
-	private static final byte MESSAGE_MPG = 0x2;
-	private static final byte MESSAGE_SPEED = 0x3;
-	private static final byte MESSAGE_ACCEL = 0x4;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -108,72 +103,6 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			}
 		}
 	};
-
-	private class ADKThread extends Thread {
-    	@Override
-    	public void run() {
-			int ret = 0;
-			byte[] buffer = new byte[16384];
-			int i;
-
-			while (ret >= 0) {
-				try {
-					ret = mAccessoryInputStream.read(buffer);
-				} catch (IOException e) {
-					Log.e(TAG, "accessory read failed", e);
-					break;
-				}
-
-				i = 0;
-				while (i < ret) {
-					int len = ret - i;
-
-					try {
-						switch (buffer[i]) {
-						case MESSAGE_RPM:
-							if (len >= 6) {
-								mDataHandler.setRpm(composeInt(buffer, i + 1));
-							}
-							i += 6;
-							break;
-						case MESSAGE_MPG:
-							if (len >= 6) {
-								mDataHandler.setMpg(composeInt(buffer, i + 1));
-							}
-							i += 6;
-							break;
-						case MESSAGE_SPEED:
-							if (len >= 6) {
-								mDataHandler.setObd2Speed(composeFloat(buffer, i + 1));
-							}
-							i += 6;
-							break;
-						case MESSAGE_ACCEL:
-							if (len >= 16) {
-								mDataHandler.setAcceleration(
-									composeFloat(buffer, i + 1),
-									composeFloat(buffer, i + 6),
-									composeFloat(buffer, i + 11));
-							}
-							i += 16;
-							break;
-
-						default:
-							Log.d(TAG, "unknown msg: " + buffer[i]);
-							i = len;
-							break;
-						}
-					} catch (ChecksumException e) {
-						Log.d(TAG, "accessory read checksum failure", e);
-						i = len;
-					}
-				}
-			}
-		}
-    }
-
-    private static class ChecksumException extends IOException {
-    }
 
 	/** Called when the activity is first created. */
     @Override
@@ -270,9 +199,12 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			FileDescriptor fd = mAccessoryFileDescriptor.getFileDescriptor();
 			mAccessoryInputStream = new FileInputStream(fd);
 			mAccessoryOutputStream = new FileOutputStream(fd);
-			Thread thread = new ADKThread();
-			thread.start();
+
+			mAdkReader = new AdkReader(mAccessoryInputStream);
+			mAdkReader.setListener(mDataHandler);
+			mAdkReader.start();
 			Log.d(TAG, "accessory opened");
+
 			showControls();
 
 			mDataLogger.start();
@@ -287,6 +219,10 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		mDataLogger.stop();
 
 		try {
+			if (mAdkReader != null) {
+				mAdkReader.stop();
+			}
+
 			if (mAccessoryFileDescriptor != null) {
 				mAccessoryFileDescriptor.close();
 			}
@@ -296,6 +232,7 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			mAccessoryInputStream = null;
 			mAccessoryOutputStream = null;
 			mAccessory = null;
+			mAdkReader = null;
 		}
 	}
 
@@ -411,48 +348,5 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		b.setTitle("Error");
 		b.setMessage(resourceId);
 		b.show();
-	}
-
-	/**
-	 * Returns an integer composed from the byte array. The first four bytes must be the integer
-	 * data in big-endian order, and the fifth bit must be the XOR of those bytes.
-	 *
-	 * @param bytes the byte array
-	 * @param offset the offset of the first byte to use
-	 * @return the integer
-	 * @throws ChecksumException if validation of the integer failed
-	 */
-	private static final int composeInt(byte[] bytes, int offset) throws ChecksumException {
-		validateChecksum(bytes, offset);
-		ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, 4);
-		return buffer.getInt();
-	}
-
-	/**
-	 * Returns a float composed from the byte array. The first four bytes must be the float
-	 * data in IEEE-754 representation, and the fifth bit must be the XOR of those bytes.
-	 *
-	 * @param bytes the byte array
-	 * @param offset the offset of the first byte to use
-	 * @return the integer
-	 * @throws ChecksumException if validation of the float failed
-	 */
-	private static final float composeFloat(byte[] bytes, int offset) throws ChecksumException {
-		validateChecksum(bytes, offset);
-		ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, 4);
-		return buffer.getFloat();
-	}
-
-	/**
-	 * Validates that the XOR of the first four bytes in the array equals the fifth byte.
-	 *
-	 * @param bytes the byte array
-	 * @param offset the offset of the first byte to use
-	 * @throws ChecksumException if validation failed
-	 */
-	private static final void validateChecksum(byte[] bytes, int offset) throws ChecksumException {
-		if ((bytes[offset] ^ bytes[offset + 1] ^ bytes[offset + 2] ^ bytes[offset + 3]) != bytes[offset + 4]) {
-			throw new ChecksumException();
-		}
 	}
 }

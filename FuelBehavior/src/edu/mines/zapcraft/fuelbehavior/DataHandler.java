@@ -10,7 +10,7 @@ import net.sf.marineapi.nmea.util.CompassPoint;
 import net.sf.marineapi.nmea.util.Position;
 
 
-public class DataHandler implements SentenceListener {
+public class DataHandler implements SentenceListener, AdkListener {
 	private static final String TAG = DataHandler.class.getSimpleName();
 
 	// GPS data
@@ -22,25 +22,30 @@ public class DataHandler implements SentenceListener {
 
 	// Engine data
 	private float mMpg;
-	private float mRpm;
-	private float mObd2Speed;
+	private int mRpm;
+	private int mThrottle; // the throttle percentage out of 100
+	private int mObd2Speed;
 
 	// Accelerometer data
 	private float mXAccel, mYAccel, mZAccel;
 
-	public void setMpg(float mpg) {
+	public void readMpg(float mpg) {
 		mMpg = mpg;
 	}
 
-	public void setRpm(float rpm) {
+	public void readRpm(int rpm) {
 		mRpm = rpm;
 	}
 
-	public void setObd2Speed(float obd2Speed) {
+	public void readThrottle(int throttle) {
+		mThrottle = throttle;
+	}
+
+	public void readSpeed(int obd2Speed) {
 		mObd2Speed = obd2Speed;
 	}
 
-	public synchronized void setAcceleration(float xAccel, float yAccel, float zAccel) {
+	public synchronized void readAcceleration(float xAccel, float yAccel, float zAccel) {
 		mXAccel = xAccel;
 		mYAccel = yAccel;
 		mZAccel = zAccel;
@@ -124,8 +129,12 @@ public class DataHandler implements SentenceListener {
 		return mMpg;
 	}
 
-	public double getRpm() {
+	public int getRpm() {
 		return mRpm;
+	}
+
+	public int getThrottle() {
+		return mThrottle;
 	}
 
 	/**
@@ -140,7 +149,6 @@ public class DataHandler implements SentenceListener {
 	public double getXAccel() {
 		return mXAccel;
 	}
-
 
 	public double getYAccel() {
 		return mYAccel;

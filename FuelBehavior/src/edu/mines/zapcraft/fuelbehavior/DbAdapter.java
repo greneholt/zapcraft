@@ -28,8 +28,9 @@ public class DbAdapter {
 		"	gpsSpeed REAL NOT NULL," +
 		"	course REAL NOT NULL," +
 		"	rpm INTEGER NOT NULL," +
+		"	throttle INTEGER NOT NULL," +
 		"	mpg REAL NOT NULL," +
-		"	obd2Speed REAL NOT NULL," +
+		"	obd2Speed INTEGER NOT NULL," +
 		"	xAccel REAL NOT NULL," +
 		"	yAccel REAL NOT NULL," +
 		"	zAccel REAL NOT NULL" +
