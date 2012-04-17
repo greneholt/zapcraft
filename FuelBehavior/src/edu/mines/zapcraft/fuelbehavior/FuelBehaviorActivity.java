@@ -124,12 +124,12 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
         mDbAdapter.open();
 
 		mDataHandler = new DataHandler();
-		mUpdater = new PeriodicUpdater(1000, this);
+		mUpdater = new PeriodicUpdater(500, this);
 
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
 		ContentValues values = new ContentValues();
-		values.put("time", Calendar.getInstance().getTimeInMillis());
+		values.put("start_time", Calendar.getInstance().getTimeInMillis());
 		mDataLogger.setDriveId(mDbAdapter.createDrive(values));
 
 		showControls();// should be hideControls, but I need to test the interface
@@ -190,6 +190,8 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		super.onDestroy();
 
 		unregisterReceiver(mUsbReceiver);
+
+		mDbAdapter.close();
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
@@ -298,10 +300,10 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 			}
 		});
 
-		Button button2 = (Button) findViewById(R.id.button2);
+		Button button2 = (Button) findViewById(R.id.start_log_button);
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				setGauge(30);
+				mDataLogger.start();
 			}
 		});
 
@@ -311,6 +313,7 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 
 	public void update() {
 		updatePosition();
+		setGauge(mDataHandler.getRpm());
 	}
 
 	public void sendCommand(byte[] command) {

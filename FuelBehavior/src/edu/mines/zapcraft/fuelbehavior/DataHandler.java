@@ -16,7 +16,7 @@ public class DataHandler implements SentenceListener, AdkListener {
 	// GPS data
 	private double mLatitude;
 	private double mLongitude;
-	private double mAltitude = Double.NaN; // altitude data may not always be available
+	private double mAltitude;
 	private double mGpsSpeed;
 	private double mCourse;
 

@@ -13,11 +13,13 @@ public class DbAdapter {
     private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
 
-    private static final String DATABASE_CREATE =
+    private static final String DRIVES_TABLE_CREATE =
         "CREATE TABLE drives (" +
 		"	_id INTEGER PRIMARY KEY AUTOINCREMENT," +
 		"	start_time INTEGER" +
-		");" +
+		")";
+
+    private static final String LOGS_TABLE_CREATE =
 		"CREATE TABLE logs (" +
 		"	_id INTEGER PRIMARY KEY AUTOINCREMENT," +
 		"	drive_id INTEGER REFERENCES drives(_id)," +
@@ -34,7 +36,7 @@ public class DbAdapter {
 		"	xAccel REAL NOT NULL," +
 		"	yAccel REAL NOT NULL," +
 		"	zAccel REAL NOT NULL" +
-		");";
+		")";
 
     private static final String DATABASE_NAME = "data";
     private static final int DATABASE_VERSION = 1;
@@ -48,7 +50,8 @@ public class DbAdapter {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL(DATABASE_CREATE);
+            db.execSQL(DRIVES_TABLE_CREATE);
+            db.execSQL(LOGS_TABLE_CREATE);
         }
 
         @Override
@@ -100,6 +103,7 @@ public class DbAdapter {
 
     public long createLog(ContentValues values) {
     	return mDb.insert("logs", null, values);
+
     }
 
     public long createDrive(ContentValues values) {
@@ -133,11 +137,11 @@ public class DbAdapter {
     }
 
     public Cursor fetchAllDrives() {
-        return mDb.rawQuery("SELECT * FROM drives ORDER BY time DESC", null);
+        return mDb.rawQuery("SELECT * FROM drives ORDER BY start_time DESC", null);
     }
 
     public Cursor fetchDriveLogs(long driveId) {
-    	return mDb.rawQuery("SELECT * FROM logs WHERE drive_id = " + driveId, null);
+    	return mDb.rawQuery("SELECT * FROM logs WHERE drive_id = ORDER BY time ASC" + driveId, null);
     }
 
     public Cursor fetchDrive(long driveId) {
