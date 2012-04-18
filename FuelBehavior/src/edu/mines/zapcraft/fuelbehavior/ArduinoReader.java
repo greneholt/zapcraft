@@ -8,18 +8,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 
-public class AdkReader {
-	private static final String TAG = AdkReader.class.getSimpleName();
+public class ArduinoReader {
+	private static final String TAG = ArduinoReader.class.getSimpleName();
 
 	private Thread mThread;
     private DataReader mReader;
-    private AdkListener mListener;
+    private ArduinoListener mListener;
 
-    public AdkReader(InputStream source) {
+    public ArduinoReader(InputStream source) {
         mReader = new DataReader(source);
     }
 
-    public void setListener(AdkListener listener) {
+    public void setListener(ArduinoListener listener) {
     	mListener = listener;
     }
 

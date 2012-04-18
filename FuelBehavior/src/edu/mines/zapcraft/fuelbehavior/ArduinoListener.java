@@ -1,7 +1,7 @@
 package edu.mines.zapcraft.FuelBehavior;
 
 
-public interface AdkListener {
+public interface ArduinoListener {
 	public void readRpm(int rpm);
 	public void readMpg(float mpg);
 	public void readThrottle(int throttle);

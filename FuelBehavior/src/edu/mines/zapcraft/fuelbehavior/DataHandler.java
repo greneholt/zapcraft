@@ -10,7 +10,7 @@ import net.sf.marineapi.nmea.util.CompassPoint;
 import net.sf.marineapi.nmea.util.Position;
 
 
-public class DataHandler implements SentenceListener, AdkListener {
+public class DataHandler implements SentenceListener, ArduinoListener {
 	private static final String TAG = DataHandler.class.getSimpleName();
 
 	// GPS data
