@@ -231,6 +231,8 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	}
 
 	private void closeAccessory() {
+		Log.d(TAG, "accessory closed");
+
 		hideControls();
 
 		mDataLogger.stop();
