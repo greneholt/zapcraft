@@ -87,7 +87,7 @@ void setup()
   // initialize serial ports 0 (serial 1 initialized in ELM function
   Serial.begin(9600);
   // Start USB connection to Android device
-  accessory.powerOn();
+  //accessory.powerOn();
 
   // Start connection to accelerometer
   /*
@@ -114,25 +114,38 @@ void loop()
   // sprintf_P(msg,"%f\n",instantfuel);
 
   if (millis() - timer > 50) { // send 20 times per second
-    if(accessory.isConnected()) {
-      sprintf(msg, "RPM %d", get_rpm());
-      accessory.println(msg);
-
-      sprintf(msg, "MPG %f", instantfuel);
-      accessory.println(msg);
-
-      sprintf(msg, "THROTTLE %d", get_throttle());
-      accessory.println(msg);
-
-      sprintf(msg, "SPEED %d", get_speed());
-      accessory.println(msg);
-
+    //Serial.println("here");
+  //  if(accessory.isConnected()) {
       /*
-      accel.get_Gxyz(&x, &y, &z);
-      sprintf(msg, "ACCEL %f %f %f", x, y, z);
+      sprintf(msg, "RPM %d", bob = (bob + 5) % 3000);
+      //accessory.write((uint8_t*)msg, strlen(msg));
       accessory.println(msg);
       */
-    }
+    
+      
+      sprintf(msg, "RPM %d", get_rpm());
+      //accessory.println(msg);
+      Serial.println(msg);
+
+      sprintf(msg, "MPG %f", instantfuel);
+      //accessory.println(msg);
+      Serial.println(msg);
+
+      sprintf(msg, "THROTTLE %d", get_throttle());
+      //accessory.println(msg);
+      Serial.println(msg);
+ 
+      sprintf(msg, "SPEED %d", get_speed());
+      //accessory.println(msg);
+      Serial.println(msg);
+      
+      /*
+      accel.get_Gxyz(&x, &y, &z);
+      sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
+      accessory.println(msg);
+      */
+    //}
+    timer = millis();
   }
 }
 

@@ -42,25 +42,29 @@ public class AdkReader {
     public void readLine(String line) {
     	Log.v(TAG, "Read line: " + line);
 
-    	if (mListener != null) {
-	    	String[] tokens = line.split(" ");
+    	try {
+	    	if (mListener != null) {
+		    	String[] tokens = line.split(" ");
 
-	    	if (tokens.length == 0) {
-	    		return;
-	    	}
+		    	if (tokens.length == 0) {
+		    		return;
+		    	}
 
-	    	if (tokens[0].equals("RPM") && tokens.length >= 2) {
-	    		mListener.readRpm(Integer.parseInt(tokens[1]));
-	    	} else if (tokens[0].equals("MPG") && tokens.length >= 2) {
-	    		mListener.readMpg(Float.parseFloat(tokens[1]));
-	    	} else if (tokens[0].equals("THROTTLE") && tokens.length >= 2) {
-	    		mListener.readThrottle(Integer.parseInt(tokens[1]));
-	    	} else if (tokens[0].equals("SPEED") && tokens.length >= 2) {
-	    		mListener.readSpeed(Integer.parseInt(tokens[1]));
-	    	} else if (tokens[0].equals("ACCEL") && tokens.length >= 4) {
-	    		mListener.readAcceleration(Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3]));
+		    	if (tokens[0].equals("RPM") && tokens.length >= 2) {
+		    		mListener.readRpm(Integer.parseInt(tokens[1]));
+		    	} else if (tokens[0].equals("MPG") && tokens.length >= 2) {
+		    		mListener.readMpg(Float.parseFloat(tokens[1]));
+		    	} else if (tokens[0].equals("THROTTLE") && tokens.length >= 2) {
+		    		mListener.readThrottle(Integer.parseInt(tokens[1]));
+		    	} else if (tokens[0].equals("SPEED") && tokens.length >= 2) {
+		    		mListener.readSpeed(Integer.parseInt(tokens[1]));
+		    	} else if (tokens[0].equals("ACCEL") && tokens.length >= 4) {
+		    		mListener.readAcceleration(Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3]));
+		    	}
 	    	}
-    	}
+    	} catch (NumberFormatException e) {
+	    	Log.d(TAG, "Invalid line: " + line, e);
+	    }
     }
 
     /**

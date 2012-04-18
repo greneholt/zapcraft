@@ -84,11 +84,11 @@ accessoryName,versionNumber,url,serialNumber);
 
 void setup() {
   // initialize serial ports 0 (serial 1 initialized in ELM function
-  //Serial.begin(9600);
+  Serial.begin(9600);
   // Start USB connection to Android device
   accessory.powerOn();
   // Initialize ELM chip
-  elm_init();
+  //elm_init();
 }
 
 void loop()
@@ -98,11 +98,12 @@ void loop()
   
   if(millis()-timer>100) { // sending 10 times per second
     if (accessory.isConnected()) { // isConnected makes sure the USB connection is open
-      int rpm = get_rpm();
+      int rpm = 1200;
       uint8_t msg[3];
       msg[0] = 0x1;
       decompose_int(rpm, msg[1], msg[2], msg[3]);
       accessory.write(msg, 3);
+      Serial.println("here");
     }
     timer = millis();
   }

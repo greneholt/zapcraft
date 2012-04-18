@@ -127,7 +127,7 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
         mDbAdapter.open();
 
 		mDataHandler = new DataHandler();
-		mUpdater = new PeriodicUpdater(500, this);
+		mUpdater = new PeriodicUpdater(100, this);
 
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
@@ -335,7 +335,6 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	}
 
 	public void update() {
-		updatePosition();
 		setGauge(mDataHandler.getRpm());
 	}
 
