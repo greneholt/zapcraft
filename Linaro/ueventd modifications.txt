@@ -1,3 +1,4 @@
-Add this line:
+Add these lines:
 
 /dev/ttyUSB0              0666   root       root
+/dev/ttyACM0              0666   root       root
