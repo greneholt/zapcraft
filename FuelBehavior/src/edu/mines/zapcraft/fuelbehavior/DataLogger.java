@@ -23,7 +23,7 @@ public class DataLogger implements Updatable {
 
 	@Override
 	public void update() {
-		Log.d(TAG, "Logging data");
+		Log.v(TAG, "Logging data");
 		ContentValues values = new ContentValues();
 		values.put("drive_id", mDriveId);
 		values.put("time", Calendar.getInstance().getTimeInMillis());

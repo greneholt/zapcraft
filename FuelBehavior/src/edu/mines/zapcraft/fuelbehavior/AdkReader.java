@@ -40,6 +40,8 @@ public class AdkReader {
     }
 
     public void readLine(String line) {
+    	Log.v(TAG, "Read line: " + line);
+
     	if (mListener != null) {
 	    	String[] tokens = line.split(" ");
 
@@ -75,7 +77,7 @@ public class AdkReader {
          */
         public DataReader(InputStream source) {
             InputStreamReader isr = new InputStreamReader(source);
-            input = new BufferedReader(isr);
+            input = new BufferedReader(isr, 40);
         }
 
         /**
@@ -94,19 +96,11 @@ public class AdkReader {
         public void run() {
             while (isRunning) {
                 try {
-	            	if (!input.ready()) {
-	                    continue;
-	                }
-
 	                String line = input.readLine();
 	                readLine(line);
-
-	                Thread.sleep(50);
                 } catch (IOException e) {
                 	Log.e(TAG, "accessory read failed", e);
                 	break;
-                } catch (InterruptedException e) {
-                	// do nothing
                 }
             }
         }

@@ -1,5 +1,6 @@
 package edu.mines.zapcraft.FuelBehavior;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -32,7 +33,6 @@ import java.util.Calendar;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
-import org.mapsforge.android.maps.MapActivity;
 import org.mapsforge.android.maps.MapController;
 import org.mapsforge.android.maps.MapScaleBar;
 import org.mapsforge.android.maps.MapView;
@@ -41,7 +41,7 @@ import org.mapsforge.android.maps.overlay.ItemizedOverlay;
 import org.mapsforge.android.maps.overlay.OverlayItem;
 import org.mapsforge.core.GeoPoint;
 
-public class FuelBehaviorActivity extends MapActivity implements Updatable {
+public class FuelBehaviorActivity extends Activity implements Updatable {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
@@ -77,7 +77,7 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 
 	private PeriodicUpdater mUpdater;
 
-	private boolean mControlsVisible;
+	private boolean mControlsVisible = false;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -132,8 +132,8 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		values.put("start_time", Calendar.getInstance().getTimeInMillis());
 		mDataLogger.setDriveId(mDbAdapter.createDrive(values));
 
-		showControls();// should be hideControls, but I need to test the interface
-		//hideControls();
+		//showControls();// should be hideControls, but I need to test the interface
+		hideControls();
     }
 
     @Override
@@ -171,7 +171,7 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		}
 	}
 
-	@Override
+    @Override
 	public void onPause() {
 		super.onPause();
 
@@ -185,9 +185,9 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 		stopGPS();
 	}
 
-	@Override
+    @Override
 	public void onDestroy() {
-		super.onDestroy();
+    	super.onDestroy();
 
 		unregisterReceiver(mUsbReceiver);
 
@@ -337,8 +337,8 @@ public class FuelBehaviorActivity extends MapActivity implements Updatable {
 	}
 
 	public void updatePosition() {
-		handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
-		handleStringMessage("Speed: " + mDataHandler.getGpsSpeed() + " Course: " + mDataHandler.getCourse());
+		//handleStringMessage("Lat: " + mDataHandler.getLatitude() + " Lon: " + mDataHandler.getLongitude() + " Alt: " + mDataHandler.getAltitude() + " m");
+		//handleStringMessage("Speed: " + mDataHandler.getGpsSpeed() + " Course: " + mDataHandler.getCourse());
 
 		GeoPoint point = new GeoPoint(mDataHandler.getLatitude(), mDataHandler.getLongitude());
 		mOverlayItem.setPoint(point);

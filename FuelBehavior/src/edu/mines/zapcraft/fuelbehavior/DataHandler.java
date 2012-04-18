@@ -67,7 +67,7 @@ public class DataHandler implements SentenceListener, AdkListener {
 	public synchronized void sentenceRead(SentenceEvent sentenceEvent) {
 		Sentence sentence = sentenceEvent.getSentence();
 
-		Log.d(TAG, "Received GPS sentence: " + sentence.toSentence());
+		Log.v(TAG, "Received GPS sentence: " + sentence.toSentence());
 
 		if (sentence instanceof GGASentence) {
 			Position position = ((GGASentence) sentence).getPosition();
