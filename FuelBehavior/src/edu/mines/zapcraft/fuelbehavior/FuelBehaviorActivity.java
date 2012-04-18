@@ -33,6 +33,7 @@ import java.util.Calendar;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
+import org.mapsforge.android.maps.MapContext;
 import org.mapsforge.android.maps.MapController;
 import org.mapsforge.android.maps.MapScaleBar;
 import org.mapsforge.android.maps.MapView;
@@ -41,7 +42,7 @@ import org.mapsforge.android.maps.overlay.ItemizedOverlay;
 import org.mapsforge.android.maps.overlay.OverlayItem;
 import org.mapsforge.core.GeoPoint;
 
-public class FuelBehaviorActivity extends Activity implements Updatable {
+public class FuelBehaviorActivity extends Activity implements MapContext, Updatable {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
 	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
@@ -78,6 +79,8 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 	private PeriodicUpdater mUpdater;
 
 	private boolean mControlsVisible = false;
+
+	private int mLastMapViewId;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -169,6 +172,10 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 		if (mControlsVisible) {
 			mUpdater.start();
 		}
+
+		if (mMapView != null) {
+			mMapView.onResume();
+		}
 	}
 
     @Override
@@ -183,6 +190,10 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 
 		closeAccessory();
 		stopGPS();
+
+		if (mMapView != null) {
+			mMapView.onPause();
+		}
 	}
 
     @Override
@@ -192,6 +203,10 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 		unregisterReceiver(mUsbReceiver);
 
 		mDbAdapter.close();
+
+		if (mMapView != null) {
+			mMapView.onDestroy();
+		}
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
@@ -271,13 +286,19 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 	public void hideControls() {
 		mControlsVisible = false;
 		mUpdater.stop();
+
+		if (mMapView != null) {
+			mMapView.onDestroy();
+		}
+
+		mMapView = null;
+
 		setContentView(R.layout.no_device);
 	}
 
 	public void showControls() {
 		setContentView(R.layout.main);
 
-		mMapView = (MapView) findViewById(R.id.mapView);
 		mMapView.setClickable(true);
 		mMapView.setBuiltInZoomControls(true);
 		mMapView.setMapFile(new File("/sdcard/frontrange.map"));
@@ -351,5 +372,20 @@ public class FuelBehaviorActivity extends Activity implements Updatable {
 		b.setTitle("Error");
 		b.setMessage(resourceId);
 		b.show();
+	}
+
+	/**
+     * Returns a unique MapView ID on each call.
+     *
+     * @return the new MapView ID.
+     */
+	@Override
+    public int getMapViewId() {
+		return ++mLastMapViewId;
+    }
+
+	@Override
+	public void registerMapView(MapView mapView) {
+		mMapView = mapView;
 	}
 }
