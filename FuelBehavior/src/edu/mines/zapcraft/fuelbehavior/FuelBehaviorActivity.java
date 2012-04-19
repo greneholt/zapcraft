@@ -141,7 +141,7 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 
 	private void startArduino() {
 		try {
-			mArduinoSerialPort = new SerialPort(new File("/dev/ttyACM0"), 9600, 0);
+			mArduinoSerialPort = new SerialPort(new File("/dev/ttyACM0"), 115200, 0);
 			mArduinoInputStream = mArduinoSerialPort.getInputStream();
 			mArduinoReader = new ArduinoReader(mArduinoInputStream);
             mArduinoReader.setListener(mDataHandler);

@@ -58,11 +58,14 @@ int get_throttle();
 int get_speed();
 int get_iat();
 unsigned char get_fuel_status();
-boolean uses_maf();
+bool uses_maf();
 int get_map();
 
 // Fuel consumption accumulator function
 void accu_trip();
+
+// Outputs a serial msg with a checksum appended. Assumes that msg is large enough to contain the checksum.
+void checksum_println(char* msg);
 
 // Initialize accelerometer object
 ADXL345 accel;
@@ -70,7 +73,7 @@ ADXL345 accel;
 void setup()
 {
   // initialize serial ports 0 (serial 1 initialized in ELM function
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Start connection to accelerometer
   /*
@@ -87,7 +90,7 @@ void setup()
 
 void loop()
 {
-  char msg[40];
+  char msg[100];
   double x, y, z;
 
   accu_trip();
@@ -98,24 +101,40 @@ void loop()
 
   if (millis() - timer > 50) { // send 20 times per second
     sprintf(msg, "RPM %d", get_rpm());
-    Serial.println(msg);
+    checksum_println(msg);
 
     sprintf(msg, "MPG %f", instantfuel);
-    Serial.println(msg);
+    checksum_println(msg);
 
     sprintf(msg, "THROTTLE %d", get_throttle());
-    Serial.println(msg);
- 
+    checksum_println(msg);
+
     sprintf(msg, "SPEED %d", get_speed());
-    Serial.println(msg);
-    
+    checksum_println(msg);
+
     /*
     accel.get_Gxyz(&x, &y, &z);
     sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
-    accessory.println(msg);
+    checksum_println(msg);
     */
+
     timer = millis();
   }
+}
+
+void checksum_println(char* msg) {
+  char checksum[8];
+  int i = 0;
+  uint8_t crc = 0;
+
+  while (msg[i] != '\0') {
+    crc ^= msg[i++];
+  }
+
+  sprintf(checksum, "*%02X", crc);
+  strcat(msg, checksum);
+
+  Serial.println(msg);
 }
 
 void calibrate_accel()
@@ -196,9 +215,9 @@ int elm_init()
   // Request current protocol
   elm_command(str, PSTR("ATDP\r"));
   // turn echo off
-  elm_command(str,PSTR("ATE0\r"));
+  elm_command(str, PSTR("ATE0\r"));
   // initialize connection with car
-  elm_command(str,PSTR("0100\r"));
+  elm_command(str, PSTR("0100\r"));
   return 0;
 }
 
@@ -312,7 +331,7 @@ unsigned char get_fuel_status()
 
 // Function to determine if a car uses a MAF for fuel metering
 // If it doesn't, we will assume that it uses a MAP
-boolean uses_maf()
+bool uses_maf()
 {
   char str[STRLEN];
   byte buf[10];

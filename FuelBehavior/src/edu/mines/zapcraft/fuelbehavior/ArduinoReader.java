@@ -44,10 +44,20 @@ public class ArduinoReader {
 
     	try {
 	    	if (mListener != null) {
-		    	String[] tokens = line.split(" ");
+		    	String[] parts = line.split("*");
+
+		    	if (parts.length != 2) {
+		    		Log.d(TAG, "Missing checksum: " + line);
+		    	}
+
+		    	if (!validChecksum(parts[0], parts[1])) {
+		    		Log.d(TAG, "Invalid checksum: " + line);
+		    	}
+
+	    		String[] tokens = parts[0].split(" ");
 
 		    	if (tokens.length == 0) {
-		    		return;
+		    		Log.d(TAG, "Invalid line: " + line);
 		    	}
 
 		    	if (tokens[0].equals("RPM") && tokens.length >= 2) {
@@ -67,6 +77,16 @@ public class ArduinoReader {
 	    }
     }
 
+    public boolean validChecksum(String input, String checksum) {
+    	byte crc = Byte.parseByte(checksum, 16);
+
+    	for (int i = 0; i < input.length(); i++) {
+    		crc ^= input.charAt(i);
+    	}
+
+    	return crc == 0;
+    }
+
     /**
      * Worker that reads the input stream and fires sentence events.
      */
@@ -81,7 +101,7 @@ public class ArduinoReader {
          */
         public DataReader(InputStream source) {
             InputStreamReader isr = new InputStreamReader(source);
-            input = new BufferedReader(isr, 40);
+            input = new BufferedReader(isr);
         }
 
         /**
