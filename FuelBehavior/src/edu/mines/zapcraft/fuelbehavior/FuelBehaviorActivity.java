@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -246,7 +247,9 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	}
 
 	public void update() {
-		setGauge(mDataHandler.getRpm());
+		updatePosition();
+		setRpmGauge(mDataHandler.getRpm());
+		setKphGauge(mDataHandler.getObd2Speed());
 	}
 
 	public void handleStringMessage(String message) {
@@ -254,8 +257,13 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		textView.append(message + "\n");
 	}
 
-	public void setGauge(float value) {
+	public void setRpmGauge(float value) {
 		Gauge gauge = (Gauge) findViewById(R.id.gauge1);
+		gauge.setHandValue(value);
+	}
+
+	public void setKphGauge(float value) {
+		Gauge gauge = (Gauge) findViewById(R.id.gauge2);
 		gauge.setHandValue(value);
 	}
 
@@ -272,7 +280,13 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	private void DisplayError(int resourceId) {
 		AlertDialog.Builder b = new AlertDialog.Builder(this);
 		b.setTitle("Error");
-		b.setMessage(resourceId);
+		b.setCancelable(false);
+		b.setMessage(getResources().getString(resourceId));
+		b.setPositiveButton("Quit", new DialogInterface.OnClickListener() {
+	           public void onClick(DialogInterface dialog, int id) {
+	                FuelBehaviorActivity.this.finish();
+	           }
+		});
 		b.show();
 	}
 

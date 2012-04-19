@@ -33,15 +33,30 @@
             android:layout_weight="1"
             android:orientation="vertical" >
 
-            <edu.mines.zapcraft.FuelBehavior.Gauge
-                android:id="@+id/gauge1"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                gaugewidget:largeNickInterval="10"
-                gaugewidget:maxValue="4000"
-                gaugewidget:title="RPM"
-                gaugewidget:totalNicks="100" />
+                android:layout_weight="1" >
+
+                <edu.mines.zapcraft.FuelBehavior.Gauge
+                    android:id="@+id/gauge1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    gaugewidget:largeNickInterval="10"
+                    gaugewidget:maxValue="4000"
+                    gaugewidget:title="RPM"
+                    gaugewidget:totalNicks="100" />
+
+                <edu.mines.zapcraft.FuelBehavior.Gauge
+                    android:id="@+id/gauge2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    gaugewidget:largeNickInterval="10"
+                    gaugewidget:maxValue="120"
+                    gaugewidget:title="KPH"
+                    gaugewidget:totalNicks="100" />
+
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/output_text"

@@ -125,7 +125,7 @@ public class DataHandler implements SentenceListener, ArduinoListener {
 		return mCourse;
 	}
 
-	public double getMpg() {
+	public float getMpg() {
 		return mMpg;
 	}
 
@@ -142,7 +142,7 @@ public class DataHandler implements SentenceListener, ArduinoListener {
 	 *
 	 * @return the speed in kilometers per hour as reported by the engine
 	 */
-	public double getObd2Speed() {
+	public int getObd2Speed() {
 		return mObd2Speed;
 	}
 

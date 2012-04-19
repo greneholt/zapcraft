@@ -43,17 +43,6 @@ long engineRPM=0; // RPM
 //unsigned long engine_on, engine_off; //used to track time of trip.\
 
 
-// Android Accessory stuff
-// accessory descriptor. It's how Arduino identifies itself to Android
-char applicationName[] = "FuelBehavior"; // the app on your phone
-char accessoryName[] = "FuelBehavior"; // your Arduino board
-char companyName[] = "Team ZapCraft";
-
-// make up anything you want for these
-char versionNumber[] = "1.0";
-char serialNumber[] = "1";
-char url[] = "google.com"; // the URL of your app online
-
 /********** Function prototypes **********/
 // ELM chip interface stuff
 void elm_write(char *str);
@@ -75,10 +64,6 @@ int get_map();
 // Fuel consumption accumulator function
 void accu_trip();
 
-// initialize ADK as an Android accessory:
-AndroidAccessory accessory(companyName, applicationName,
-                           accessoryName,versionNumber,url,serialNumber);
-
 // Initialize accelerometer object
 ADXL345 accel;
 
@@ -86,8 +71,6 @@ void setup()
 {
   // initialize serial ports 0 (serial 1 initialized in ELM function
   Serial.begin(9600);
-  // Start USB connection to Android device
-  //accessory.powerOn();
 
   // Start connection to accelerometer
   /*
@@ -114,37 +97,23 @@ void loop()
   // sprintf_P(msg,"%f\n",instantfuel);
 
   if (millis() - timer > 50) { // send 20 times per second
-    //Serial.println("here");
-  //  if(accessory.isConnected()) {
-      /*
-      sprintf(msg, "RPM %d", bob = (bob + 5) % 3000);
-      //accessory.write((uint8_t*)msg, strlen(msg));
-      accessory.println(msg);
-      */
-    
-      
-      sprintf(msg, "RPM %d", get_rpm());
-      //accessory.println(msg);
-      Serial.println(msg);
+    sprintf(msg, "RPM %d", get_rpm());
+    Serial.println(msg);
 
-      sprintf(msg, "MPG %f", instantfuel);
-      //accessory.println(msg);
-      Serial.println(msg);
+    sprintf(msg, "MPG %f", instantfuel);
+    Serial.println(msg);
 
-      sprintf(msg, "THROTTLE %d", get_throttle());
-      //accessory.println(msg);
-      Serial.println(msg);
+    sprintf(msg, "THROTTLE %d", get_throttle());
+    Serial.println(msg);
  
-      sprintf(msg, "SPEED %d", get_speed());
-      //accessory.println(msg);
-      Serial.println(msg);
-      
-      /*
-      accel.get_Gxyz(&x, &y, &z);
-      sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
-      accessory.println(msg);
-      */
-    //}
+    sprintf(msg, "SPEED %d", get_speed());
+    Serial.println(msg);
+    
+    /*
+    accel.get_Gxyz(&x, &y, &z);
+    sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
+    accessory.println(msg);
+    */
     timer = millis();
   }
 }
