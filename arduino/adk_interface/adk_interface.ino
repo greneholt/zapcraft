@@ -37,7 +37,7 @@ int i = 0;
 unsigned long old_time;
 byte has_rpm=0;
 float instantfuel=0.0;
-byte vss=0;  // speed
+
 long maf=0;  // MAF
 long engineRPM=0; // RPM
 //unsigned long engine_on, engine_off; //used to track time of trip.\
@@ -104,6 +104,12 @@ void loop()
     checksum_println(msg);
 
     sprintf(msg, "MPG %f", instantfuel);
+    checksum_println(msg);
+    
+    sprintf(msg, "MAP %d", get_map());
+    checksum_println(msg);
+
+    sprintf(msg, "TEMP %d", get_iat());
     checksum_println(msg);
 
     sprintf(msg, "THROTTLE %d", get_throttle());
@@ -337,6 +343,12 @@ bool uses_maf()
   byte buf[10];
   elm_command(str,PSTR("0100\r"));
   elm_compact_response(buf,str);
+  if(buf[1] & 0x01){
+    Serial.println("yes maf"); 
+  }
+  else{
+    Serial.println("no maf"); 
+  }
   return (buf[1] & 0x01);
 }
 
@@ -344,12 +356,13 @@ bool uses_maf()
 void accu_trip()
 {
   static byte min_throttle_pos=255;   // idle throttle position, start high
-  byte throttle_pos;   // current throttle position
+  int throttle_pos;   // current throttle position
+  int vss;             // speed
   byte fuel_status;    // byte-encoded fuel system status
   byte open_loop;
   unsigned long time_now, delta_time;
   unsigned long delta_dist, delta_fuel;
-  unsigned long fuel_flowrate;
+  float fuel_flowrate;
 
   // time elapsed
   time_now = millis();
@@ -358,10 +371,14 @@ void accu_trip()
 
   // Get distance traveled in this loop in cm
   vss = get_speed();
-  delta_dist=((long)vss*delta_time)/36;
+  
+  // vss = [km/hr]
+  // delta_time = [ms]
+  // km/hr * (1 hr/3600 sec) * (1 sec/1000 ms) * ms * (1000 m/1 km) * (100 cm/1 m)
+  delta_dist = (vss*delta_time)/36;
 
   // Check throttle position to see if car is coasting
-  throttle_pos = (byte)get_throttle();
+  throttle_pos = get_throttle();
   if(throttle_pos<min_throttle_pos && throttle_pos != 0) { //And make sure its not '0' returned by no response in read byte function
     min_throttle_pos=throttle_pos;
   }
@@ -369,11 +386,16 @@ void accu_trip()
   // Check if car is in open loop fuel mode
   fuel_status = get_fuel_status();
   open_loop = (fuel_status & 0x04) ? 1 : 0;
+  
+//  if(open_loop){
+//    Serial.println("open loop mode"); 
+//  }
 
   // check to see if throttle position is within a certain bound of minimum throttle
   // if it is, assume we are coasting
   if(throttle_pos<(min_throttle_pos+4) && open_loop) {
     maf=0;  // decelerate fuel cut-off, fake the MAF as 0
+    //Serial.println("fuel cutoff");
   }
 
   else {
@@ -382,7 +404,7 @@ void accu_trip()
     } else {
       // No MAF found if we end up here
       // Declare Variable Inputs
-      long imap, rpm, manp, iat;
+      float imap, rpm, manp, iat;
 
       // Get OBD-II Variable Inputs
       // Manifold Ambient Pressure
@@ -392,8 +414,13 @@ void accu_trip()
       // Intake Ambient Temperature
       iat = get_iat() + 273;  // [K]
 
-      // Calculate Mass Air Flow, uses scaling factor of 0.12
-      maf=(rpm*manp*VOL_EFF*ENG_DIS)/(0.12*iat*R_AIR); //[g/sec]
+      // Calculate Mass Air Flow, uses scaling factor of 1/0.12 = 8.3333...
+      maf=rpm*manp/iat*VOL_EFF*ENG_DIS*8.3333333/R_AIR; //[g/sec]
+
+//      Serial.println("distance:");
+//      Serial.println(delta_dist);
+      Serial.println("maf:");
+      Serial.println(maf);
 
       /*
       No MAF found if we go here
@@ -410,6 +437,8 @@ void accu_trip()
 
   // Get fuel flow rate in gallons/sec
   fuel_flowrate = maf*0.000092502;// [gallons/sec]
+  Serial.println("fuel flow rate:");
+  Serial.println(fuel_flowrate);
 
   // Get instantaneous fuel economy in MPG
   instantfuel = (delta_dist)/(fuel_flowrate*delta_time*160.9344);// [mpg]
