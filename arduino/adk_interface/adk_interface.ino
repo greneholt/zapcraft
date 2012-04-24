@@ -85,7 +85,7 @@ void setup()
   */
 
   // Initialize ELM chip
-  elm_init();
+  //elm_init();
 }
 
 void loop()
@@ -93,29 +93,33 @@ void loop()
   char msg[100];
   double x, y, z;
 
-  accu_trip();
+  //accu_trip();
 
   static long timer = millis();
 
   // sprintf_P(msg,"%f\n",instantfuel);
 
   if (millis() - timer > 50) { // send 20 times per second
-    sprintf(msg, "RPM %d", get_rpm());
-    checksum_println(msg);
-
-    sprintf(msg, "MPG %f", instantfuel);
-    checksum_println(msg);
+//    sprintf(msg, "RPM %d", get_rpm());
+//    checksum_println(msg);
+//
+//    sprintf(msg, "MPG %f", instantfuel);
+//    checksum_println(msg);
+//    
+//    sprintf(msg, "MAP %d", get_map());
+//    checksum_println(msg);
+//
+//    sprintf(msg, "TEMP %d", get_iat());
+//    checksum_println(msg);
+//
+//    sprintf(msg, "THROTTLE %d", get_throttle());
+//    checksum_println(msg);
+//
+//    sprintf(msg, "SPEED %d", get_speed());
+//    checksum_println(msg);
     
-    sprintf(msg, "MAP %d", get_map());
-    checksum_println(msg);
-
-    sprintf(msg, "TEMP %d", get_iat());
-    checksum_println(msg);
-
-    sprintf(msg, "THROTTLE %d", get_throttle());
-    checksum_println(msg);
-
-    sprintf(msg, "SPEED %d", get_speed());
+    //sprintf(msg, "MAF %.6f", get_airflow());
+    dtostrf(get_airflow(),6,2,msg);
     checksum_println(msg);
 
     /*
@@ -269,8 +273,17 @@ float get_airflow()
 {
   char str[STRLEN];
   byte buf[10];
-  elm_command(str,PSTR("0110\r"));
-  elm_compact_response(buf,str);
+  buf[0] = 1;
+  buf[1] = 178;
+  int maf1;
+  int maf2;
+  //elm_command(str,PSTR("0110\r"));
+  //elm_compact_response(buf,str);
+  maf1 = buf[0];
+  maf2 = buf[1];
+  Serial.println("raw maf values:");
+  Serial.println(maf1);
+  Serial.println(maf2);
   return ((float)(buf[0]*256+buf[1]))/100.0;
 }
 
