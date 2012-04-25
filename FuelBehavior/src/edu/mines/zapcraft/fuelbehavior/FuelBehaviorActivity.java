@@ -13,11 +13,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android_serialport_api.SerialPort;
 
+import java.text.DateFormat;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
@@ -78,10 +81,6 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		mUpdater = new PeriodicUpdater(100, this);
 
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
-
-		ContentValues values = new ContentValues();
-		values.put("start_time", Calendar.getInstance().getTimeInMillis());
-		mDataLogger.setDriveId(mDbAdapter.createDrive(values));
 
 		showControls();
     }
@@ -231,13 +230,23 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				updatePosition();
+				Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("gmt"));
+				cal.setTimeInMillis(mDataHandler.getTimeInMillis());
+				handleStringMessage(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(cal.getTime()));
 			}
 		});
 
 		Button button2 = (Button) findViewById(R.id.start_log_button);
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
+				if (!mDataHandler.hasFix()) {
+					handleStringMessage("No GPS fix");
+					handleStringMessage("Tracking " + mDataHandler.getSatelliteCount() + " satellites");
+					return;
+				}
+				ContentValues values = new ContentValues();
+				values.put("start_time", mDataHandler.getTimeInMillis());
+				mDataLogger.setDriveId(mDbAdapter.createDrive(values));
 				mDataLogger.start();
 			}
 		});

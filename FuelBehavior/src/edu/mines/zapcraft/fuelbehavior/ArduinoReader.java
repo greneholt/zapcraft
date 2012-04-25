@@ -44,20 +44,23 @@ public class ArduinoReader {
 
     	try {
 	    	if (mListener != null) {
-		    	String[] parts = line.split("*");
+		    	String[] parts = line.split("\\*");
 
 		    	if (parts.length != 2) {
 		    		Log.d(TAG, "Missing checksum: " + line);
+		    		return;
 		    	}
 
 		    	if (!validChecksum(parts[0], parts[1])) {
 		    		Log.d(TAG, "Invalid checksum: " + line);
+		    		return;
 		    	}
 
 	    		String[] tokens = parts[0].split(" ");
 
 		    	if (tokens.length == 0) {
 		    		Log.d(TAG, "Invalid line: " + line);
+		    		return;
 		    	}
 
 		    	if (tokens[0].equals("RPM") && tokens.length >= 2) {
