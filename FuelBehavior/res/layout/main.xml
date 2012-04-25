@@ -9,7 +9,7 @@
         android:id="@+id/button1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/read_gps" />
+        android:text="Current time" />
 
     <Button
         android:id="@+id/start_log_button"

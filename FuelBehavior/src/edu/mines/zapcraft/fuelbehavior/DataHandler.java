@@ -1,24 +1,37 @@
 package edu.mines.zapcraft.FuelBehavior;
 
 import android.util.Log;
+
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import net.sf.marineapi.nmea.event.SentenceEvent;
 import net.sf.marineapi.nmea.event.SentenceListener;
 import net.sf.marineapi.nmea.sentence.GGASentence;
+import net.sf.marineapi.nmea.sentence.GSASentence;
 import net.sf.marineapi.nmea.sentence.RMCSentence;
 import net.sf.marineapi.nmea.sentence.Sentence;
 import net.sf.marineapi.nmea.util.CompassPoint;
+import net.sf.marineapi.nmea.util.Date;
+import net.sf.marineapi.nmea.util.GpsFixStatus;
 import net.sf.marineapi.nmea.util.Position;
+import net.sf.marineapi.nmea.util.Time;
 
 
 public class DataHandler implements SentenceListener, ArduinoListener {
 	private static final String TAG = DataHandler.class.getSimpleName();
 
+	private static final TimeZone UTC = TimeZone.getTimeZone("gmt");
+
 	// GPS data
+	private long mTimeOffset; // how many milliseconds the real GPS time is ahead of the system time
 	private double mLatitude;
 	private double mLongitude;
 	private double mAltitude;
 	private double mGpsSpeed;
 	private double mCourse;
+	private int mSatelliteCount;
+	private boolean mHasFix = false;
 
 	// Engine data
 	private float mMpg;
@@ -28,6 +41,19 @@ public class DataHandler implements SentenceListener, ArduinoListener {
 
 	// Accelerometer data
 	private float mXAccel, mYAccel, mZAccel;
+
+	public synchronized void readTime(Time time, Date date) {
+		Calendar gps = Calendar.getInstance(UTC);
+		gps.set(Calendar.YEAR, date.getYear());
+		gps.set(Calendar.MONTH, date.getMonth());
+		gps.set(Calendar.DAY_OF_MONTH, date.getDay());
+		gps.set(Calendar.HOUR_OF_DAY, time.getHour());
+		gps.set(Calendar.MINUTE, time.getMinutes());
+		gps.set(Calendar.SECOND, (int)time.getSeconds());
+
+		Calendar now = Calendar.getInstance(UTC);
+		mTimeOffset = gps.getTimeInMillis() - now.getTimeInMillis();
+	}
 
 	public void readMpg(float mpg) {
 		mMpg = mpg;
@@ -73,11 +99,21 @@ public class DataHandler implements SentenceListener, ArduinoListener {
 			Position position = ((GGASentence) sentence).getPosition();
 			setLatLon(position);
 			mAltitude = position.getAltitude();
+			mSatelliteCount = ((GGASentence) sentence).getSatelliteCount();
 		} else if (sentence instanceof RMCSentence) {
-			setLatLon(((RMCSentence) sentence).getPosition());
-			mGpsSpeed = ((RMCSentence) sentence).getSpeed();
-			mCourse = ((RMCSentence) sentence).getCourse();
+			RMCSentence rmcSentence = (RMCSentence) sentence;
+			setLatLon(rmcSentence.getPosition());
+			mGpsSpeed = rmcSentence.getSpeed();
+			mCourse = rmcSentence.getCourse();
+			readTime(rmcSentence.getTime(), rmcSentence.getDate());
+		} else if (sentence instanceof GSASentence) {
+			mHasFix = ((GSASentence) sentence).getFixStatus() != GpsFixStatus.GPS_NA;
 		}
+	}
+
+	public long getTimeInMillis() {
+		Calendar now = Calendar.getInstance(UTC);
+		return now.getTimeInMillis() + mTimeOffset;
 	}
 
 	/**
@@ -123,6 +159,14 @@ public class DataHandler implements SentenceListener, ArduinoListener {
 	 */
 	public double getCourse() {
 		return mCourse;
+	}
+
+	public int getSatelliteCount() {
+		return mSatelliteCount;
+	}
+
+	public boolean hasFix() {
+		return mHasFix;
 	}
 
 	public float getMpg() {
