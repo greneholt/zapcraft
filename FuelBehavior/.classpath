@@ -5,7 +5,7 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="lib" path="libs/marineapi.jar"/>
-	<classpathentry kind="lib" path="libs/mapsforge-map-0.3.0-jar-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="libs/mapsforge-map-0.3.0-jar-with-dependencies.jar" sourcepath="/Users/connor/Code/mines/sd-support/mapsforge/0.3.0"/>
 	<classpathentry kind="lib" path="libs/androidplot-core-0.5.0.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
