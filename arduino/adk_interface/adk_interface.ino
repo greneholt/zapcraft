@@ -85,25 +85,26 @@ void setup()
   
 
   // Initialize ELM chip
-  elm_init();
+  //elm_init();
 }
 
 void loop()
 {
   char tempfloat[10];
-  char tmpx[8];
-  char tmpy[8];
-  char tmpz[8];
+  char tmpx[10];
+  char tmpy[10];
+  char tmpz[10];
   char msg[100];
   double x, y, z;
 
-  accu_trip();
+  //accu_trip();
 
   static long timer = millis();
 
   // sprintf_P(msg,"%f\n",instantfuel);
 
   if (millis() - timer > 50) { // send 20 times per second
+    /*
     sprintf(msg, "RPM %d", get_rpm());
     checksum_println(msg);
 
@@ -126,16 +127,14 @@ void loop()
     dtostrf(get_airflow(),6,5,tempfloat);
     sprintf(msg, "MAF %s", tempfloat);
     checksum_println(msg);
-      
-
+    */
     
     accel.get_Gxyz(&x, &y, &z);
     dtostrf(x,6,5,tmpx);
     dtostrf(y,6,5,tmpy);
     dtostrf(z,6,5,tmpz);
-    sprintf(msg, "ACCEL %s, %s, %s", tmpx, tmpy, tmpz);
+    sprintf(msg, "ACCEL %s %s %s", tmpx, tmpy, tmpz);
     checksum_println(msg);
-    
 
     timer = millis();
   }
