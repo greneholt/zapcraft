@@ -1,7 +1,6 @@
 package edu.mines.zapcraft.FuelBehavior;
 
 import android.content.ContentValues;
-import android.util.Log;
 
 
 public class DataLogger implements Updatable {
@@ -16,12 +15,11 @@ public class DataLogger implements Updatable {
 		mDataHandler = dataHandler;
 		mDbAdapter = dbAdapter;
 
-		mUpdater = new PeriodicUpdater(1000, this);
+		mUpdater = new PeriodicUpdater(500, this);
 	}
 
 	@Override
 	public void update() {
-		Log.v(TAG, "Logging data");
 		ContentValues values = new ContentValues();
 		values.put("drive_id", mDriveId);
 		values.put("time", mDataHandler.getTimeInMillis());
