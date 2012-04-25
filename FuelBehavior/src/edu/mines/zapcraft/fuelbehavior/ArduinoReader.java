@@ -8,18 +8,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 
-public class AdkReader {
-	private static final String TAG = AdkReader.class.getSimpleName();
+public class ArduinoReader {
+	private static final String TAG = ArduinoReader.class.getSimpleName();
 
 	private Thread mThread;
     private DataReader mReader;
-    private AdkListener mListener;
+    private ArduinoListener mListener;
 
-    public AdkReader(InputStream source) {
+    public ArduinoReader(InputStream source) {
         mReader = new DataReader(source);
     }
 
-    public void setListener(AdkListener listener) {
+    public void setListener(ArduinoListener listener) {
     	mListener = listener;
     }
 
@@ -44,9 +44,22 @@ public class AdkReader {
 
     	try {
 	    	if (mListener != null) {
-		    	String[] tokens = line.split(" ");
+		    	String[] parts = line.split("\\*");
+
+		    	if (parts.length != 2) {
+		    		Log.d(TAG, "Missing checksum: " + line);
+		    		return;
+		    	}
+
+		    	if (!validChecksum(parts[0], parts[1])) {
+		    		Log.d(TAG, "Invalid checksum: " + line);
+		    		return;
+		    	}
+
+	    		String[] tokens = parts[0].split(" ");
 
 		    	if (tokens.length == 0) {
+		    		Log.d(TAG, "Invalid line: " + line);
 		    		return;
 		    	}
 
@@ -67,6 +80,16 @@ public class AdkReader {
 	    }
     }
 
+    public boolean validChecksum(String input, String checksum) {
+    	byte crc = Byte.parseByte(checksum, 16);
+
+    	for (int i = 0; i < input.length(); i++) {
+    		crc ^= input.charAt(i);
+    	}
+
+    	return crc == 0;
+    }
+
     /**
      * Worker that reads the input stream and fires sentence events.
      */
@@ -81,7 +104,7 @@ public class AdkReader {
          */
         public DataReader(InputStream source) {
             InputStreamReader isr = new InputStreamReader(source);
-            input = new BufferedReader(isr, 40);
+            input = new BufferedReader(isr);
         }
 
         /**

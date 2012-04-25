@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FuelBehavior</string>
-    <string name="no_device">No device connected</string>
-    <string name="read_gps">Read GPS</string>
-    <string name="error_gps_security">Permissions incorrect for /dev/ttyUSB0 to access GPS</string>
+    <string name="error_no_gps">GPS not connected</string>
     <string name="error_gps_ioexception">An IOException occurred when communicating with the GPS</string>
+    <string name="error_no_arduino">Arduino not connected</string>
+    <string name="error_arduino_ioexception">An IOException occurred when communicating with the Arduino</string>
 </resources>

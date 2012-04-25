@@ -2,34 +2,25 @@ package edu.mines.zapcraft.FuelBehavior;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android_serialport_api.SerialPort;
 
-import com.android.future.usb.UsbAccessory;
-import com.android.future.usb.UsbManager;
+import java.text.DateFormat;
 
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import net.sf.marineapi.nmea.io.SentenceReader;
 
@@ -45,22 +36,9 @@ import org.mapsforge.core.GeoPoint;
 public class FuelBehaviorActivity extends Activity implements MapContext, Updatable {
 	private static final String TAG = FuelBehaviorActivity.class.getSimpleName();
 
-	private static final String ACTION_USB_PERMISSION = "edu.mines.zapcraft.FuelBehavior.action.USB_PERMISSION";
-
-	private UsbManager mUsbManager;
-	private PendingIntent mPermissionIntent;
-	private boolean mPermissionRequestPending;
-
-	private UsbAccessory mAccessory;
-	private ParcelFileDescriptor mAccessoryFileDescriptor;
-	private InputStream mAccessoryInputStream;
-	private OutputStream mAccessoryOutputStream;
-
-	private SerialPort mSerialPort;
-	private SentenceReader mSentenceReader;
+	private SerialPort mGPSSerialPort;
+	private SentenceReader mGPSSentenceReader;
 	private InputStream mGPSInputStream;
-
-	private AdkReader mAdkReader;
 
 	private DataHandler mDataHandler;
 
@@ -82,30 +60,11 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 
 	private int mLastMapViewId;
 
-	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-			if (ACTION_USB_PERMISSION.equals(action)) {
-				synchronized (this) {
-					UsbAccessory accessory = UsbManager.getAccessory(intent);
-					if (intent.getBooleanExtra(
-							UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-						openAccessory(accessory);
-					} else {
-						Log.d(TAG, "permission denied for accessory "
-								+ accessory);
-					}
-					mPermissionRequestPending = false;
-				}
-			} else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-				UsbAccessory accessory = UsbManager.getAccessory(intent);
-				if (accessory != null && accessory.equals(mAccessory)) {
-					closeAccessory();
-				}
-			}
-		}
-	};
+	private InputStream mArduinoInputStream;
+
+	private ArduinoReader mArduinoReader;
+
+	private SerialPort mArduinoSerialPort;
 
 	/** Called when the activity is first created. */
     @Override
@@ -115,14 +74,6 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AMV");
 
-        // setup receivers for USB notifications
-        mUsbManager = UsbManager.getInstance(this);
-		mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(
-				ACTION_USB_PERMISSION), 0);
-		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
-		registerReceiver(mUsbReceiver, filter);
-
 		mDbAdapter = new DbAdapter(this);
         mDbAdapter.open();
 
@@ -131,12 +82,7 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
-		ContentValues values = new ContentValues();
-		values.put("start_time", Calendar.getInstance().getTimeInMillis());
-		mDataLogger.setDriveId(mDbAdapter.createDrive(values));
-
-		//showControls();// should be hideControls, but I need to test the interface
-		hideControls();
+		showControls();
     }
 
     @Override
@@ -147,27 +93,10 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 			mWakeLock.acquire();
 		}
 
-		if (mAccessoryInputStream == null || mAccessoryOutputStream == null) {
-			UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-			UsbAccessory accessory = (accessories == null ? null : accessories[0]);
-			if (accessory != null) {
-				if (mUsbManager.hasPermission(accessory)) {
-					openAccessory(accessory);
-				} else {
-					synchronized (mUsbReceiver) {
-						if (!mPermissionRequestPending) {
-							mUsbManager.requestPermission(accessory,
-									mPermissionIntent);
-							mPermissionRequestPending = true;
-						}
-					}
-				}
-			} else {
-				Log.d(TAG, "mAccessory is null");
-			}
-		}
-
+		startArduino();
 		startGPS();
+
+		//mDataLogger.start();
 
 		if (mControlsVisible) {
 			mUpdater.start();
@@ -186,9 +115,11 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 			mWakeLock.release();
 		}
 
+		mDataLogger.stop();
+
 		mUpdater.stop();
 
-		closeAccessory();
+		stopArduino();
 		stopGPS();
 
 		if (mMapView != null) {
@@ -200,8 +131,6 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	public void onDestroy() {
     	super.onDestroy();
 
-		unregisterReceiver(mUsbReceiver);
-
 		mDbAdapter.close();
 
 		if (mMapView != null) {
@@ -209,61 +138,45 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		}
 	}
 
-	private void openAccessory(UsbAccessory accessory) {
-		mAccessoryFileDescriptor = mUsbManager.openAccessory(accessory);
-		if (mAccessoryFileDescriptor != null) {
-			mAccessory = accessory;
-			FileDescriptor fd = mAccessoryFileDescriptor.getFileDescriptor();
-			mAccessoryInputStream = new FileInputStream(fd);
-			mAccessoryOutputStream = new FileOutputStream(fd);
-
-			mAdkReader = new AdkReader(mAccessoryInputStream);
-			mAdkReader.setListener(mDataHandler);
-			mAdkReader.start();
-			Log.d(TAG, "accessory opened");
-
-			showControls();
-
-			mDataLogger.start();
-		} else {
-			Log.d(TAG, "accessory open fail");
+	private void startArduino() {
+		try {
+			mArduinoSerialPort = new SerialPort(new File("/dev/ttyACM0"), 115200, 0);
+			mArduinoInputStream = mArduinoSerialPort.getInputStream();
+			mArduinoReader = new ArduinoReader(mArduinoInputStream);
+            mArduinoReader.setListener(mDataHandler);
+            mArduinoReader.start();
+		} catch (SecurityException e) {
+			DisplayError(R.string.error_no_arduino);
+		} catch (IOException e) {
+			DisplayError(R.string.error_arduino_ioexception);
 		}
 	}
 
-	private void closeAccessory() {
-		Log.d(TAG, "accessory closed");
-
-		hideControls();
-
-		mDataLogger.stop();
-
+	private void stopArduino() {
 		try {
-			if (mAdkReader != null) {
-				mAdkReader.stop();
+			if (mArduinoReader != null) {
+				mArduinoReader.stop();
 			}
 
-			if (mAccessoryFileDescriptor != null) {
-				mAccessoryFileDescriptor.close();
+			if (mArduinoSerialPort != null) {
+				mArduinoSerialPort.close();
 			}
-		} catch (IOException e) {
 		} finally {
-			mAccessoryFileDescriptor = null;
-			mAccessoryInputStream = null;
-			mAccessoryOutputStream = null;
-			mAccessory = null;
-			mAdkReader = null;
+			mArduinoReader = null;
+			mArduinoSerialPort = null;
+			mArduinoInputStream = null;
 		}
 	}
 
 	private void startGPS() {
 		try {
-			mSerialPort = new SerialPort(new File("/dev/ttyUSB0"), 4800, 0);
-			mGPSInputStream = mSerialPort.getInputStream();
-			mSentenceReader = new SentenceReader(mGPSInputStream);
-            mSentenceReader.addSentenceListener(mDataHandler);
-            mSentenceReader.start();
+			mGPSSerialPort = new SerialPort(new File("/dev/ttyUSB0"), 4800, 0);
+			mGPSInputStream = mGPSSerialPort.getInputStream();
+			mGPSSentenceReader = new SentenceReader(mGPSInputStream);
+            mGPSSentenceReader.addSentenceListener(mDataHandler);
+            mGPSSentenceReader.start();
 		} catch (SecurityException e) {
-			DisplayError(R.string.error_gps_security);
+			DisplayError(R.string.error_no_gps);
 		} catch (IOException e) {
 			DisplayError(R.string.error_gps_ioexception);
 		}
@@ -271,16 +184,16 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 
 	private void stopGPS() {
 		try {
-			if (mSentenceReader != null) {
-				mSentenceReader.stop();
+			if (mGPSSentenceReader != null) {
+				mGPSSentenceReader.stop();
 			}
 
-			if (mSerialPort != null) {
-				mSerialPort.close();
+			if (mGPSSerialPort != null) {
+				mGPSSerialPort.close();
 			}
 		} finally {
-			mSentenceReader = null;
-			mSerialPort = null;
+			mGPSSentenceReader = null;
+			mGPSSerialPort = null;
 			mGPSInputStream = null;
 		}
 	}
@@ -294,8 +207,6 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		}
 
 		mMapView = null;
-
-		setContentView(R.layout.no_device);
 	}
 
 	public void showControls() {
@@ -319,13 +230,23 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		Button button1 = (Button) findViewById(R.id.button1);
 		button1.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				updatePosition();
+				Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("gmt"));
+				cal.setTimeInMillis(mDataHandler.getTimeInMillis());
+				handleStringMessage(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(cal.getTime()));
 			}
 		});
 
 		Button button2 = (Button) findViewById(R.id.start_log_button);
 		button2.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
+				if (!mDataHandler.hasFix()) {
+					handleStringMessage("No GPS fix");
+					handleStringMessage("Tracking " + mDataHandler.getSatelliteCount() + " satellites");
+					return;
+				}
+				ContentValues values = new ContentValues();
+				values.put("start_time", mDataHandler.getTimeInMillis());
+				mDataLogger.setDriveId(mDbAdapter.createDrive(values));
 				mDataLogger.start();
 			}
 		});
@@ -335,17 +256,9 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	}
 
 	public void update() {
-		setGauge(mDataHandler.getRpm());
-	}
-
-	public void sendCommand(byte[] command) {
-		if (mAccessoryOutputStream != null) {
-			try {
-				mAccessoryOutputStream.write(command);
-			} catch (IOException e) {
-				Log.e(TAG, "write failed", e);
-			}
-		}
+		updatePosition();
+		setRpmGauge(mDataHandler.getRpm());
+		setKphGauge(mDataHandler.getObd2Speed());
 	}
 
 	public void handleStringMessage(String message) {
@@ -353,8 +266,13 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 		textView.append(message + "\n");
 	}
 
-	public void setGauge(float value) {
+	public void setRpmGauge(float value) {
 		Gauge gauge = (Gauge) findViewById(R.id.gauge1);
+		gauge.setHandValue(value);
+	}
+
+	public void setKphGauge(float value) {
+		Gauge gauge = (Gauge) findViewById(R.id.gauge2);
 		gauge.setHandValue(value);
 	}
 
@@ -371,7 +289,13 @@ public class FuelBehaviorActivity extends Activity implements MapContext, Updata
 	private void DisplayError(int resourceId) {
 		AlertDialog.Builder b = new AlertDialog.Builder(this);
 		b.setTitle("Error");
-		b.setMessage(resourceId);
+		b.setCancelable(false);
+		b.setMessage(getResources().getString(resourceId));
+		b.setPositiveButton("Quit", new DialogInterface.OnClickListener() {
+	           public void onClick(DialogInterface dialog, int id) {
+	                FuelBehaviorActivity.this.finish();
+	           }
+		});
 		b.show();
 	}
 

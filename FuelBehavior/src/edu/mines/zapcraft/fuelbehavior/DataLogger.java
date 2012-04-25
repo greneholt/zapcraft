@@ -3,8 +3,6 @@ package edu.mines.zapcraft.FuelBehavior;
 import android.content.ContentValues;
 import android.util.Log;
 
-import java.util.Calendar;
-
 
 public class DataLogger implements Updatable {
 	private static final String TAG = DataLogger.class.getSimpleName();
@@ -26,7 +24,7 @@ public class DataLogger implements Updatable {
 		Log.v(TAG, "Logging data");
 		ContentValues values = new ContentValues();
 		values.put("drive_id", mDriveId);
-		values.put("time", Calendar.getInstance().getTimeInMillis());
+		values.put("time", mDataHandler.getTimeInMillis());
 		values.put("latitude", mDataHandler.getLatitude());
 		values.put("longitude", mDataHandler.getLongitude());
 		values.put("altitude", mDataHandler.getAltitude());
