@@ -27,7 +27,7 @@ typedef uint8_t byte; // compatability with broken libraries. Arduino 1.0 is ver
 #define DATA    1    // data with no cr/prompt
 
 // Constants for calculating fuel economy
-#define R_AIR 287 // [J/kg/K]
+#define R_AIR 287.0 // [J/kg/K]
 #define ENG_DIS 0.001901   // Engine displacement in m^3
 #define VOL_EFF 0.8  // volumetric efficiency of engine, say 80%
 
@@ -38,7 +38,7 @@ unsigned long old_time;
 byte has_rpm=0;
 float instantfuel=0.0;
 
-long maf=0;  // MAF
+float maf=0.0;  // MAF
 long engineRPM=0; // RPM
 //unsigned long engine_on, engine_off; //used to track time of trip.\
 
@@ -52,14 +52,14 @@ byte elm_check_response(byte *cmd, char *str);
 void establishContact();
 
 // OBDII data getters
-int get_rpm();
+unsigned int get_rpm();
 float get_airflow();
-int get_throttle();
-int get_speed();
+unsigned int get_throttle();
+unsigned int get_speed();
 int get_iat();
-unsigned char get_fuel_status();
+unsigned char get_fuel_status();// Cannot Change Type, Used For Byte Operations
 bool uses_maf();
-int get_map();
+unsigned int get_map();
 
 // Fuel consumption accumulator function
 void accu_trip();
@@ -76,57 +76,66 @@ void setup()
   Serial.begin(115200);
 
   // Start connection to accelerometer
-  /*
+  
   accel.powerOn();
   delay(500);  // Slight delay for power up
   accel.setRangeSetting(2);  // set range to +-2g
   accel.setRate(100);        // set sampling rate to 100 Hz
   calibrate_accel();
-  */
+  
 
   // Initialize ELM chip
-  //elm_init();
+  elm_init();
 }
 
 void loop()
 {
+  char tempfloat[10];
+  char tmpx[8];
+  char tmpy[8];
+  char tmpz[8];
   char msg[100];
   double x, y, z;
 
-  //accu_trip();
+  accu_trip();
 
   static long timer = millis();
 
   // sprintf_P(msg,"%f\n",instantfuel);
 
   if (millis() - timer > 50) { // send 20 times per second
-//    sprintf(msg, "RPM %d", get_rpm());
-//    checksum_println(msg);
-//
-//    sprintf(msg, "MPG %f", instantfuel);
-//    checksum_println(msg);
-//    
-//    sprintf(msg, "MAP %d", get_map());
-//    checksum_println(msg);
-//
-//    sprintf(msg, "TEMP %d", get_iat());
-//    checksum_println(msg);
-//
-//    sprintf(msg, "THROTTLE %d", get_throttle());
-//    checksum_println(msg);
-//
-//    sprintf(msg, "SPEED %d", get_speed());
-//    checksum_println(msg);
-    
-    //sprintf(msg, "MAF %.6f", get_airflow());
-    dtostrf(get_airflow(),6,2,msg);
+    sprintf(msg, "RPM %d", get_rpm());
     checksum_println(msg);
 
-    /*
-    accel.get_Gxyz(&x, &y, &z);
-    sprintf(msg, "ACCEL %f, %f, %f", x, y, z);
+    dtostrf(instantfuel,6,5,tempfloat);
+    sprintf(msg, "MPG %s", tempfloat);
     checksum_println(msg);
-    */
+    
+    sprintf(msg, "MAP %d", get_map());
+    checksum_println(msg);
+
+    sprintf(msg, "TEMP %d", get_iat());
+    checksum_println(msg);
+
+    sprintf(msg, "THROTTLE %d", get_throttle());
+    checksum_println(msg);
+
+    sprintf(msg, "SPEED %d", get_speed());
+    checksum_println(msg);
+    
+    dtostrf(get_airflow(),6,5,tempfloat);
+    sprintf(msg, "MAF %s", tempfloat);
+    checksum_println(msg);
+      
+
+    
+    accel.get_Gxyz(&x, &y, &z);
+    dtostrf(x,6,5,tmpx);
+    dtostrf(y,6,5,tmpy);
+    dtostrf(z,6,5,tmpz);
+    sprintf(msg, "ACCEL %s, %s, %s", tmpx, tmpy, tmpz);
+    checksum_println(msg);
+    
 
     timer = millis();
   }
@@ -256,7 +265,7 @@ byte elm_compact_response(byte *buf, char *str)
 }
 
 // Returns engine RPM
-int get_rpm()
+unsigned int get_rpm()
 {
   char str[STRLEN];
   byte buf[10];
@@ -273,22 +282,13 @@ float get_airflow()
 {
   char str[STRLEN];
   byte buf[10];
-  buf[0] = 1;
-  buf[1] = 178;
-  int maf1;
-  int maf2;
-  //elm_command(str,PSTR("0110\r"));
-  //elm_compact_response(buf,str);
-  maf1 = buf[0];
-  maf2 = buf[1];
-  Serial.println("raw maf values:");
-  Serial.println(maf1);
-  Serial.println(maf2);
+  elm_command(str,PSTR("0110\r"));
+  elm_compact_response(buf,str);
   return ((float)(buf[0]*256+buf[1]))/100.0;
 }
 
 // Returns throttle percentage
-int get_throttle()
+unsigned int get_throttle()
 {
   char str[STRLEN];
   byte buf[10];
@@ -298,7 +298,7 @@ int get_throttle()
 }
 
 // Returns speed in kph
-int get_speed()
+unsigned int get_speed()
 {
   char str[STRLEN];
   byte buf[10];
@@ -308,7 +308,7 @@ int get_speed()
 }
 
 // Returns manifold absolute pressure in kPA
-int get_map()
+unsigned int get_map()
 {
   char str[STRLEN];
   byte buf[10];
@@ -373,6 +373,7 @@ void accu_trip()
   int vss;             // speed
   byte fuel_status;    // byte-encoded fuel system status
   byte open_loop;
+  char maftest[10];  // for holding printed strings
   unsigned long time_now, delta_time;
   unsigned long delta_dist, delta_fuel;
   float fuel_flowrate;
@@ -417,7 +418,8 @@ void accu_trip()
     } else {
       // No MAF found if we end up here
       // Declare Variable Inputs
-      float imap, rpm, manp, iat;
+      float imap, rpm, manp;
+      float iat;
 
       // Get OBD-II Variable Inputs
       // Manifold Ambient Pressure
@@ -432,8 +434,9 @@ void accu_trip()
 
 //      Serial.println("distance:");
 //      Serial.println(delta_dist);
+      dtostrf(maf,6,5,maftest);
       Serial.println("maf:");
-      Serial.println(maf);
+      Serial.println(maftest);
 
       /*
       No MAF found if we go here
@@ -449,9 +452,10 @@ void accu_trip()
   }
 
   // Get fuel flow rate in gallons/sec
-  fuel_flowrate = maf*0.000092502;// [gallons/sec]
+  fuel_flowrate = maf*0.000092502f;// [gallons/sec]
+  dtostrf(fuel_flowrate,6,5,maftest);
   Serial.println("fuel flow rate:");
-  Serial.println(fuel_flowrate);
+  Serial.println(maftest);
 
   // Get instantaneous fuel economy in MPG
   instantfuel = (delta_dist)/(fuel_flowrate*delta_time*160.9344);// [mpg]
