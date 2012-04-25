@@ -51,6 +51,10 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 		mDataLogger = new DataLogger(mDataHandler, mDbAdapter);
 
 		setContentView(R.layout.main);
+
+		FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+	    fragmentTransaction.add(R.id.fragment_container, new InstantFragment());
+	    fragmentTransaction.commit();
     }
 
     @Override
@@ -109,6 +113,8 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
 		switch(view) {
 		case ViewChangeListener.INSTANT:
+			newFragment = new InstantFragment();
+			break;
 		case ViewChangeListener.MAP:
 		case ViewChangeListener.LOGS:
 		case ViewChangeListener.SETTINGS:
@@ -117,10 +123,10 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 			break;
 		}
 
-		FragmentTransaction ft = getFragmentManager().beginTransaction();
-	    ft.replace(R.id.right_fragment, newFragment);
-	    ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-	    ft.commit();
+		FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+	    fragmentTransaction.replace(R.id.fragment_container, newFragment);
+	    fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+	    fragmentTransaction.commit();
 	}
 
 	private void startArduino() {

@@ -32,12 +32,13 @@ import org.mapsforge.core.GeoPoint;
 public class OldFragment extends Fragment implements Updatable {
 	private static final String TAG = OldFragment.class.getSimpleName();
 
+	private static final int MAP_VIEW_ID = 1;
+
 	private MapController mMapController;
 
 	private ArrayItemizedOverlay mItemizedOverlay;
 	private OverlayItem mOverlayItem;
 
-	private int mLastMapViewId;
 	private MapView mMapView;
 
 	private PeriodicUpdater mUpdater;
@@ -78,6 +79,7 @@ public class OldFragment extends Fragment implements Updatable {
 		mapScaleBar.setShowMapScaleBar(true);
 
 		mMapController = mMapView.getController();
+		mMapController.setZoom(15);
 
 		mItemizedOverlay = new ArrayItemizedOverlay(null);
 		mOverlayItem = new OverlayItem();
@@ -160,9 +162,6 @@ public class OldFragment extends Fragment implements Updatable {
 	}
 
 	public void updatePosition() {
-		//handleStringMessage("Lat: " + mDataHandlerProvider.getDataHandler().getLatitude() + " Lon: " + mDataHandlerProvider.getDataHandler().getLongitude() + " Alt: " + mDataHandlerProvider.getDataHandler().getAltitude() + " m");
-		//handleStringMessage("Speed: " + mDataHandlerProvider.getDataHandler().getGpsSpeed() + " Course: " + mDataHandlerProvider.getDataHandler().getCourse());
-
 		GeoPoint point = new GeoPoint(mDataProvider.getDataHandler().getLatitude(), mDataProvider.getDataHandler().getLongitude());
 		mOverlayItem.setPoint(point);
 		mItemizedOverlay.requestRedraw();
@@ -174,14 +173,9 @@ public class OldFragment extends Fragment implements Updatable {
 			super(context);
 		}
 
-		/**
-	     * Returns a unique MapView ID on each call.
-	     *
-	     * @return the new MapView ID.
-	     */
 		@Override
 	    public int getMapViewId() {
-			return ++mLastMapViewId;
+			return MAP_VIEW_ID;
 	    }
 
 		@Override

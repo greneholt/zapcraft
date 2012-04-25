@@ -197,9 +197,6 @@ public final class Gauge extends View {
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		Log.d(TAG, "Width spec: " + MeasureSpec.toString(widthMeasureSpec));
-		Log.d(TAG, "Height spec: " + MeasureSpec.toString(heightMeasureSpec));
-
 		int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 		int widthSize = MeasureSpec.getSize(widthMeasureSpec);
 

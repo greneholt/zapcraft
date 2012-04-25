@@ -5,17 +5,18 @@
     android:layout_height="match_parent"
     android:orientation="horizontal">
     <fragment
+        android:id="@+id/button_list_fragment"
         android:name="edu.mines.zapcraft.FuelBehavior.ButtonListFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:id="@+id/left_fragment"
         android:layout_weight="2" >
         <!-- Preview: layout=@layout/button_list -->
     </fragment>
-    <fragment
-        android:name="edu.mines.zapcraft.FuelBehavior.OldFragment"
+
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:id="@+id/right_fragment"
-        android:layout_weight="8" />
+        android:layout_weight="8"
+        android:id="@+id/fragment_container" >
+    </FrameLayout>
 </LinearLayout>

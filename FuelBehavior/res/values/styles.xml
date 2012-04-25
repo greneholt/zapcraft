@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="text_gauge">
+        <item name="android:typeface">monospace</item>
+        <item name="android:textSize">36dp</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:background">@drawable/border</item>
+        <item name="android:gravity">center_horizontal|center_vertical</item>
+    </style>
+
+</resources>
