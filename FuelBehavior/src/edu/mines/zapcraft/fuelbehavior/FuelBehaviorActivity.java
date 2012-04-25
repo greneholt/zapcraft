@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
 	private DataHandler mDataHandler;
 	private DataLogger mDataLogger;
+	private boolean mLogging;
 
 	private SerialPort mGPSSerialPort;
 	private SentenceReader mGPSSentenceReader;
@@ -107,6 +109,33 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
     	return mDbAdapter;
     }
 
+    @Override
+    public void startLogging() {
+    	if (!mLogging) {
+    		mLogging = true;
+
+    		ContentValues values = new ContentValues();
+			values.put("start_time", mDataHandler.getTimeInMillis());
+			mDataLogger.setDriveId(mDbAdapter.createDrive(values));
+    		mDataLogger.start();
+    	}
+    }
+
+	@Override
+	public void stopLogging() {
+		mLogging = false;
+		mDataLogger.stop();
+	}
+
+	@Override
+	public void resumeLogging() {
+		if (mDataLogger.hasDriveId()) {
+			mDataLogger.start();
+		} else {
+			displayMessage(getResources().getString(R.string.no_drive_started));
+		}
+	}
+
 	@Override
 	public void onViewChange(int view) {
 		Fragment newFragment;
@@ -116,7 +145,11 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 			newFragment = new InstantFragment();
 			break;
 		case ViewChangeListener.MAP:
+			newFragment = new OldFragment();
+			break;
 		case ViewChangeListener.LOGS:
+			newFragment = new LogsFragment();
+			break;
 		case ViewChangeListener.SETTINGS:
 		default:
 			newFragment = new OldFragment();
@@ -129,6 +162,27 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 	    fragmentTransaction.commit();
 	}
 
+	public void displayError(String message) {
+		AlertDialog.Builder b = new AlertDialog.Builder(this);
+		b.setTitle("Error");
+		b.setCancelable(false);
+		b.setMessage(message);
+		b.setPositiveButton("Quit", new DialogInterface.OnClickListener() {
+	           public void onClick(DialogInterface dialog, int id) {
+	                FuelBehaviorActivity.this.finish();
+	           }
+		});
+		b.show();
+	}
+
+	public void displayMessage(String message) {
+		AlertDialog.Builder b = new AlertDialog.Builder(this);
+		b.setTitle("Message");
+		b.setMessage(message);
+		b.setPositiveButton("Ok", null);
+		b.show();
+	}
+
 	private void startArduino() {
 		try {
 			mArduinoSerialPort = new SerialPort(new File("/dev/ttyACM0"), 115200, 0);
@@ -137,9 +191,9 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
             mArduinoReader.setListener(mDataHandler);
             mArduinoReader.start();
 		} catch (SecurityException e) {
-			DisplayError(R.string.error_no_arduino);
+			displayError(getResources().getString(R.string.error_no_arduino));
 		} catch (IOException e) {
-			DisplayError(R.string.error_arduino_ioexception);
+			displayError(getResources().getString(R.string.error_arduino_ioexception));
 		}
 	}
 
@@ -167,9 +221,9 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
             mGPSSentenceReader.addSentenceListener(mDataHandler);
             mGPSSentenceReader.start();
 		} catch (SecurityException e) {
-			DisplayError(R.string.error_no_gps);
+			displayError(getResources().getString(R.string.error_no_gps));
 		} catch (IOException e) {
-			DisplayError(R.string.error_gps_ioexception);
+			displayError(getResources().getString(R.string.error_gps_ioexception));
 		}
 	}
 
@@ -187,18 +241,5 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 			mGPSSerialPort = null;
 			mGPSInputStream = null;
 		}
-	}
-
-	private void DisplayError(int resourceId) {
-		AlertDialog.Builder b = new AlertDialog.Builder(this);
-		b.setTitle("Error");
-		b.setCancelable(false);
-		b.setMessage(getResources().getString(resourceId));
-		b.setPositiveButton("Quit", new DialogInterface.OnClickListener() {
-	           public void onClick(DialogInterface dialog, int id) {
-	                FuelBehaviorActivity.this.finish();
-	           }
-		});
-		b.show();
 	}
 }

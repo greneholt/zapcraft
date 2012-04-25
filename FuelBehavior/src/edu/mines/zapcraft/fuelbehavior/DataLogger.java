@@ -10,7 +10,7 @@ public class DataLogger implements Updatable {
 	private DataHandler mDataHandler;
 	private PeriodicUpdater mUpdater;
 	private DbAdapter mDbAdapter;
-	private long mDriveId;
+	private long mDriveId = -1;
 
 	public DataLogger(DataHandler dataHandler, DbAdapter dbAdapter) {
 		mDataHandler = dataHandler;
@@ -40,7 +40,15 @@ public class DataLogger implements Updatable {
 		mDbAdapter.createLog(values);
 	}
 
+	public boolean hasDriveId() {
+		return mDriveId != -1;
+	}
+
 	public void start() {
+		if (mDriveId == -1) {
+			throw new IllegalStateException("No drive ID set");
+		}
+
 		mUpdater.start();
 	}
 

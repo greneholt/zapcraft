@@ -5,4 +5,6 @@
     <string name="error_gps_ioexception">An IOException occurred when communicating with the GPS</string>
     <string name="error_no_arduino">Arduino not connected</string>
     <string name="error_arduino_ioexception">An IOException occurred when communicating with the Arduino</string>
+    <string name="no_drives">No drives recorded</string>
+    <string name="no_drive_started">A drive has not been started yet</string>
 </resources>
