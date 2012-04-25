@@ -48,7 +48,7 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 		buttonStart.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				if (!mDataProvider.getDataHandler().hasFix()) {
-					mDataProvider.displayMessage("No GPS fix\nTracking" + mDataProvider.getDataHandler().getSatelliteCount() + " satellites");
+					mDataProvider.displayMessage("No GPS fix\nTracking " + mDataProvider.getDataHandler().getSatelliteCount() + " satellites");
 					return;
 				}
 

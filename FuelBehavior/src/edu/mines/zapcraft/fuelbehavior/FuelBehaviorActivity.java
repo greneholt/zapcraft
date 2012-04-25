@@ -145,14 +145,14 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 			newFragment = new InstantFragment();
 			break;
 		case ViewChangeListener.MAP:
-			newFragment = new OldFragment();
+			newFragment = new MapFragment();
 			break;
 		case ViewChangeListener.LOGS:
 			newFragment = new LogsFragment();
 			break;
 		case ViewChangeListener.SETTINGS:
 		default:
-			newFragment = new OldFragment();
+			newFragment = new MapFragment();
 			break;
 		}
 

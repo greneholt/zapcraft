@@ -2,22 +2,16 @@ package edu.mines.zapcraft.FuelBehavior;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
-import java.text.DateFormat;
-
 import java.io.File;
-
-import java.util.Calendar;
-import java.util.TimeZone;
 
 import org.mapsforge.android.maps.MapContext;
 import org.mapsforge.android.maps.MapController;
@@ -29,8 +23,8 @@ import org.mapsforge.android.maps.overlay.OverlayItem;
 import org.mapsforge.core.GeoPoint;
 
 
-public class OldFragment extends Fragment implements Updatable {
-	private static final String TAG = OldFragment.class.getSimpleName();
+public class MapFragment extends Fragment implements Updatable {
+	private static final String TAG = MapFragment.class.getSimpleName();
 
 	private static final int MAP_VIEW_ID = 1;
 
@@ -40,6 +34,9 @@ public class OldFragment extends Fragment implements Updatable {
 	private OverlayItem mOverlayItem;
 
 	private MapView mMapView;
+
+	private CheckBox mMapFollow;
+	private TextView mGpsStatus;
 
 	private PeriodicUpdater mUpdater;
 
@@ -59,7 +56,7 @@ public class OldFragment extends Fragment implements Updatable {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		mUpdater = new PeriodicUpdater(100, this);
+		mUpdater = new PeriodicUpdater(500, this);
 	}
 
 	@Override
@@ -69,7 +66,7 @@ public class OldFragment extends Fragment implements Updatable {
 		Context mapFragmentContext = new MapFragmentContext(inflater.getContext());
 		LayoutInflater mapInflater = inflater.cloneInContext(mapFragmentContext);
 
-		View view = mapInflater.inflate(R.layout.old, container, false);
+		View view = mapInflater.inflate(R.layout.map, container, false);
 
 		mMapView.setClickable(true);
 		mMapView.setBuiltInZoomControls(true);
@@ -87,29 +84,8 @@ public class OldFragment extends Fragment implements Updatable {
 		mItemizedOverlay.addItem(this.mOverlayItem);
 		mMapView.getOverlays().add(this.mItemizedOverlay);
 
-		Button button1 = (Button) view.findViewById(R.id.button1);
-		button1.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View view) {
-				Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("gmt"));
-				cal.setTimeInMillis(mDataProvider.getDataHandler().getTimeInMillis());
-				handleStringMessage(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(cal.getTime()));
-			}
-		});
-
-		Button button2 = (Button) view.findViewById(R.id.start_log_button);
-		button2.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View view) {
-				if (!mDataProvider.getDataHandler().hasFix()) {
-					handleStringMessage("No GPS fix");
-					handleStringMessage("Tracking " + mDataProvider.getDataHandler().getSatelliteCount() + " satellites");
-					return;
-				}
-				ContentValues values = new ContentValues();
-				values.put("start_time", mDataProvider.getDataHandler().getTimeInMillis());
-				mDataProvider.getDataLogger().setDriveId(mDataProvider.getDbAdapter().createDrive(values));
-				mDataProvider.getDataLogger().start();
-			}
-		});
+		mMapFollow = (CheckBox) view.findViewById(R.id.map_follow);
+		mGpsStatus = (TextView) view.findViewById(R.id.gps_status);
 
         return view;
 	}
@@ -142,30 +118,25 @@ public class OldFragment extends Fragment implements Updatable {
 	@Override
 	public void update() {
 		updatePosition();
-		setRpmGauge(mDataProvider.getDataHandler().getRpm());
-		setKphGauge(mDataProvider.getDataHandler().getObd2Speed());
-	}
-
-	public void handleStringMessage(String message) {
-		TextView textView = (TextView) getActivity().findViewById(R.id.output_text);
-		textView.append(message + "\n");
-	}
-
-	public void setRpmGauge(float value) {
-		Gauge gauge = (Gauge) getActivity().findViewById(R.id.gauge1);
-		gauge.setHandValue(value);
-	}
-
-	public void setKphGauge(float value) {
-		Gauge gauge = (Gauge) getActivity().findViewById(R.id.gauge2);
-		gauge.setHandValue(value);
 	}
 
 	public void updatePosition() {
-		GeoPoint point = new GeoPoint(mDataProvider.getDataHandler().getLatitude(), mDataProvider.getDataHandler().getLongitude());
+		DataHandler dataHandler = mDataProvider.getDataHandler();
+
+		GeoPoint point = new GeoPoint(dataHandler.getLatitude(), dataHandler.getLongitude());
 		mOverlayItem.setPoint(point);
 		mItemizedOverlay.requestRedraw();
-		mMapController.setCenter(point);
+
+		String hasFix = "";
+		if (!dataHandler.hasFix()) {
+			hasFix = "No fix. ";
+		}
+
+		mGpsStatus.setText(hasFix + "Tracking " + mDataProvider.getDataHandler().getSatelliteCount() + " satellites");
+
+		if (mMapFollow.isChecked()) {
+			mMapController.setCenter(point);
+		}
 	}
 
 	private class MapFragmentContext extends ContextWrapper implements MapContext {
