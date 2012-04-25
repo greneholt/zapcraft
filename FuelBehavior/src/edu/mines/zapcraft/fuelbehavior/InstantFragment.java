@@ -80,9 +80,9 @@ public class InstantFragment extends Fragment implements Updatable {
 		mRpmGauge.setHandValue(dataHandler.getRpm());
 		mMpgText.setText(String.format("%.1f MPG", dataHandler.getMpg()));
 		mRpmText.setText(dataHandler.getRpm() + " RPM");
-		mSpeedText.setText(String.format("%.1f KPH", dataHandler.getGpsSpeed()));
+		mSpeedText.setText(String.format("%.0f KPH", dataHandler.getGpsSpeed()));
 		mThrottleText.setText(dataHandler.getThrottle() + "%");
-		mXAccelText.setText(String.format("X %.3fG", dataHandler.getXAccel()));
-		mYAccelText.setText(String.format("Y %.3fG", dataHandler.getYAccel()));
+		mXAccelText.setText(String.format("%+.2fG X", dataHandler.getXAccel()));
+		mYAccelText.setText(String.format("%+.2fG Y", dataHandler.getYAccel()));
 	}
 }
