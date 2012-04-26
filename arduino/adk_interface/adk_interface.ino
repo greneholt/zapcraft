@@ -15,7 +15,6 @@ typedef uint8_t byte; // compatability with broken libraries. Arduino 1.0 is ver
 #include <Max3421e_constants.h>
 #include <Max_LCD.h>
 #include <Usb.h>
-#include <AndroidAccessory.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <ADXL345.h>
@@ -67,7 +66,7 @@ void setup()
   Serial.begin(115200);
 
   // Start connection to accelerometer
-  
+
   accel.powerOn();
   delay(500);  // Slight delay for power up
   accel.setRangeSetting(2);	// set range to +-2g
@@ -100,7 +99,7 @@ void loop()
     dtostrf(instantfuel,6,5,tempfloat);
     sprintf(msg, "MPG %s", tempfloat);
     checksum_println(msg);
-    
+
     sprintf(msg, "MAP %d", get_map());
     checksum_println(msg);
 
@@ -112,11 +111,11 @@ void loop()
 
     sprintf(msg, "SPEED %d", get_speed());
     checksum_println(msg);
-    
+
     dtostrf(get_airflow(),6,5,tempfloat);
     sprintf(msg, "MAF %s", tempfloat);
     checksum_println(msg);
-    
+
     accel.get_Gxyz(&x, &y, &z);
     dtostrf(x,6,5,tmpx);	// dtostrf used instead of sprintf because sprintf not fully implemented in Arduino language
     dtostrf(y,6,5,tmpy);
@@ -336,10 +335,10 @@ bool uses_maf()
   elm_compact_response(buf,str);
   // Test code to print on serial if car has a MAF or not
   /*if(buf[1] & 0x01){
-    Serial.println("yes maf"); 
+    Serial.println("yes maf");
   }
   else{
-    Serial.println("no maf"); 
+    Serial.println("no maf");
   }*/
   return (buf[1] & 0x01);
 }
@@ -355,7 +354,7 @@ void accu_trip()
   unsigned long time_now, delta_time;
   unsigned long delta_dist, delta_fuel;
   float fuel_flowrate, maf;
-  
+
   char maftest[10];  	// for holding printed strings
 
   // time elapsed
@@ -365,7 +364,7 @@ void accu_trip()
 
   // Get distance traveled in this loop in cm
   vss = get_speed();
-  
+
   // vss = [km/hr]
   // delta_time = [ms]
   // km/hr * (1 hr/3600 sec) * (1 sec/1000 ms) * ms * (1000 m/1 km) * (100 cm/1 m)
@@ -380,9 +379,9 @@ void accu_trip()
   // Check if car is in open loop fuel mode
   fuel_status = get_fuel_status();
   open_loop = (fuel_status & 0x04) ? 1 : 0;
-  
+
   /*if(open_loop){
-    Serial.println("open loop mode"); 
+    Serial.println("open loop mode");
   }*/
 
   // check to see if throttle position is within a certain bound of minimum throttle
