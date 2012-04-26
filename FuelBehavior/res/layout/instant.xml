@@ -61,7 +61,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             gaugewidget:largeNickInterval="10"
-            gaugewidget:maxValue="60"
+            gaugewidget:maxValue="30"
             gaugewidget:title="MPG"
             gaugewidget:totalNicks="100" />
 
@@ -71,7 +71,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             gaugewidget:largeNickInterval="10"
-            gaugewidget:maxValue="3000"
+            gaugewidget:maxValue="3500"
             gaugewidget:title="RPM"
             gaugewidget:totalNicks="100" />
 
