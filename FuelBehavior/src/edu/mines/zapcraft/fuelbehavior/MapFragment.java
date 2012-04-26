@@ -4,7 +4,10 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +30,7 @@ public class MapFragment extends Fragment implements Updatable {
 	private static final String TAG = MapFragment.class.getSimpleName();
 
 	private static final int MAP_VIEW_ID = 1;
+	private static final String KEY_MAP_FOLLOW = "map_follow";
 
 	private MapController mMapController;
 
@@ -84,7 +88,10 @@ public class MapFragment extends Fragment implements Updatable {
 		mItemizedOverlay.addItem(this.mOverlayItem);
 		mMapView.getOverlays().add(this.mItemizedOverlay);
 
+		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
 		mMapFollow = (CheckBox) view.findViewById(R.id.map_follow);
+		mMapFollow.setChecked(sharedPrefs.getBoolean(KEY_MAP_FOLLOW, true));
 		mGpsStatus = (TextView) view.findViewById(R.id.gps_status);
 
         return view;
@@ -106,6 +113,10 @@ public class MapFragment extends Fragment implements Updatable {
 		mUpdater.stop();
 
 		mMapView.onPause();
+
+		Editor editor = PreferenceManager.getDefaultSharedPreferences(getActivity()).edit();
+		editor.putBoolean(KEY_MAP_FOLLOW, mMapFollow.isChecked());
+		editor.commit();
 	}
 
 	@Override

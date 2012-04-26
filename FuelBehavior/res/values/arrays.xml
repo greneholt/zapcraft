@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="gradient_style">
+        <item name="ryg">Red-Yellow-Green</item>
+        <item name="gyr">Green-Yellow-Red</item>
+        <item name="ybp">Yellow-Blue-Pink</item>
+        <item name="pby">Pink-Blue-Yellow</item>
+    </string-array>
+    
+    <string-array name="gradient_style_values">
+        <item name="ryg">0</item>
+        <item name="gyr">1</item>
+        <item name="ybp">2</item>
+        <item name="pby">3</item>
+    </string-array>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory
+        android:title="Visual Options"
+        android:key="visual_options">
+        <ListPreference
+           android:key="mpg_gradient_style"
+           android:title="MPG Gradient style"
+           android:summary="Define the color scheme used for the MPG gauge"
+           android:defaultValue="0"
+           android:entries="@array/gradient_style"
+           android:entryValues="@array/gradient_style_values"
+        />
+        
+        <ListPreference
+           android:key="rpm_gradient_style"
+           android:title="RPM Gradient style"
+           android:summary="Define the color scheme used for the RPM gauge"
+           android:defaultValue="1"
+           android:entries="@array/gradient_style"
+           android:entryValues="@array/gradient_style_values"
+        />
+    </PreferenceCategory>
+</PreferenceScreen>
