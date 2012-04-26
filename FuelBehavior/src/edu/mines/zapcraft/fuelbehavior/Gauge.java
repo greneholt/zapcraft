@@ -47,6 +47,8 @@ public final class Gauge extends View {
 	private Paint handScrewPaint;
 
 	private Paint cachedPaint;
+
+	private Gradient mGradient;
 	// end drawing tools
 
 	private Bitmap cached; // holds the cached static part
@@ -143,6 +145,10 @@ public final class Gauge extends View {
 		this.title = title;
 	}
 
+	public void setGradient(Gradient gradient) {
+		mGradient = gradient;
+	}
+
 	private void initDrawingTools() {
 		// the linear gradient is a bit skewed for realism
 		rimPaint = new Paint();
@@ -193,6 +199,11 @@ public final class Gauge extends View {
 
 		cachedPaint = new Paint();
 		cachedPaint.setFilterBitmap(true);
+
+		mGradient = new Gradient(new int[] {
+			Color.rgb(0xff, 0x00, 0x00),
+			Color.rgb(0xff, 0xff, 0x00),
+			Color.rgb(0x00, 0xff, 0x00) }, null);
 	}
 
 	@Override
@@ -287,9 +298,7 @@ public final class Gauge extends View {
 	}
 
 	private void drawFace(Canvas canvas) {
-		int color = Color.rgb((int)(0xff - 0xff * getRelativePosition()),
-			(int)(0xff * getRelativePosition()), 0x00);
-
+		int color = mGradient.getGradientColor(getRelativePosition());
 		facePaint.setColor(color);
 		canvas.drawOval(faceRect, facePaint);
 	}

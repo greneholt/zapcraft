@@ -2,6 +2,7 @@ package edu.mines.zapcraft.FuelBehavior;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,6 +49,13 @@ public class InstantFragment extends Fragment implements Updatable {
 
 		mMpgGauge = (Gauge) view.findViewById(R.id.mpgGauge);
 		mRpmGauge = (Gauge) view.findViewById(R.id.rpmGauge);
+
+		mRpmGauge.setGradient(new Gradient(new int [] {
+			Color.rgb(0x00, 0xff, 0x00),
+			Color.rgb(0xff, 0xff, 0x00),
+			Color.rgb(0xff, 0x00, 0x00)
+		}, null));
+
 		mMpgText = (TextView) view.findViewById(R.id.mpg_text);
 		mRpmText = (TextView) view.findViewById(R.id.rpm_text);
 		mSpeedText = (TextView) view.findViewById(R.id.speed_text);
