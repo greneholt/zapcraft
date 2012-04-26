@@ -28,13 +28,19 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 
 	private CursorAdapter mAdapter;
 
+	private Button mButtonStart;
+
+	private Button mButtonStop;
+
+	private Button mButtonResume;
+
 	@Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
             mDataProvider = (DataProvider) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " must implement DataHandlerProvider");
+            throw new ClassCastException(activity.toString() + " must implement DataProvider");
         }
     }
 
@@ -44,8 +50,12 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 
 		View view = inflater.inflate(R.layout.logs, container, false);
 
-		Button buttonStart = (Button) view.findViewById(R.id.start_logging_button);
-		buttonStart.setOnClickListener(new View.OnClickListener() {
+		mButtonStart = (Button) view.findViewById(R.id.start_logging_button);
+		mButtonStop = (Button) view.findViewById(R.id.stop_logging_button);
+		mButtonResume = (Button) view.findViewById(R.id.resume_logging_button);
+
+		mButtonStart.setEnabled(!mDataProvider.isLogging());
+		mButtonStart.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				if (!mDataProvider.getDataHandler().hasFix()) {
 					mDataProvider.displayMessage("No GPS fix\nTracking " + mDataProvider.getDataHandler().getSatelliteCount() + " satellites");
@@ -53,20 +63,32 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 				}
 
 				mDataProvider.startLogging();
+
+				mButtonStart.setEnabled(false);
+				mButtonStop.setEnabled(true);
+				mButtonResume.setEnabled(false);
 			}
 		});
 
-		Button buttonStop = (Button) view.findViewById(R.id.stop_logging_button);
-		buttonStop.setOnClickListener(new View.OnClickListener() {
+		mButtonStop.setEnabled(mDataProvider.isLogging());
+		mButtonStop.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				mDataProvider.stopLogging();
+
+				mButtonStart.setEnabled(true);
+				mButtonStop.setEnabled(false);
+				mButtonResume.setEnabled(true);
 			}
 		});
 
-		Button buttonResume = (Button) view.findViewById(R.id.resume_logging_button);
-		buttonResume.setOnClickListener(new View.OnClickListener() {
+		mButtonResume.setEnabled(!mDataProvider.isLogging() && mDataProvider.canResumeLogging());
+		mButtonResume.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				mDataProvider.resumeLogging();
+
+				mButtonStart.setEnabled(false);
+				mButtonStop.setEnabled(true);
+				mButtonResume.setEnabled(false);
 			}
 		});
 
@@ -77,15 +99,11 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 	public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        //setEmptyText(getResources().getString(R.string.no_drives));
-
         Cursor drivesCursor = mDataProvider.getDbAdapter().fetchAllDrives();
 
         mAdapter = new DrivesCursorAdapter(getActivity(), R.layout.drive_row, drivesCursor, 0);
 
         setListAdapter(mAdapter);
-
-        //setListShown(false);
 
         getLoaderManager().initLoader(0, null, this);
 	}
@@ -119,12 +137,6 @@ public class LogsFragment extends ListFragment implements LoaderManager.LoaderCa
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 		mAdapter.swapCursor(data);
-/*
-		if (isResumed()) {
-            setListShown(true);
-        } else {
-            setListShownNoAnimation(true);
-        }*/
 	}
 
 	@Override

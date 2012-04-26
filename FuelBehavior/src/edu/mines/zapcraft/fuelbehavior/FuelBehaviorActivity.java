@@ -27,7 +27,7 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
 	private DataHandler mDataHandler;
 	private DataLogger mDataLogger;
-	private boolean mLogging;
+	private boolean mIsLogging;
 
 	private SerialPort mGPSSerialPort;
 	private SentenceReader mGPSSentenceReader;
@@ -111,8 +111,8 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
     @Override
     public void startLogging() {
-    	if (!mLogging) {
-    		mLogging = true;
+    	if (!mIsLogging) {
+    		mIsLogging = true;
 
     		ContentValues values = new ContentValues();
 			values.put("start_time", mDataHandler.getTimeInMillis());
@@ -123,17 +123,26 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
 	@Override
 	public void stopLogging() {
-		mLogging = false;
+		mIsLogging = false;
 		mDataLogger.stop();
 	}
 
 	@Override
 	public void resumeLogging() {
-		if (mDataLogger.hasDriveId()) {
+		if (!mIsLogging) {
+			mIsLogging = true;
 			mDataLogger.start();
-		} else {
-			displayMessage(getResources().getString(R.string.no_drive_started));
 		}
+	}
+
+	@Override
+	public boolean isLogging()  {
+		return mIsLogging;
+	}
+
+	@Override
+	public boolean canResumeLogging() {
+		return mDataLogger.hasDriveId();
 	}
 
 	@Override

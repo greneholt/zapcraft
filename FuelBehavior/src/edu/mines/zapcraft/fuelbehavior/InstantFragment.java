@@ -39,7 +39,7 @@ public class InstantFragment extends Fragment implements Updatable {
         try {
             mDataProvider = (DataProvider) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " must implement DataHandlerProvider");
+            throw new ClassCastException(activity.toString() + " must implement DataProvider");
         }
     }
 
