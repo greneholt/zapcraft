@@ -64,7 +64,7 @@ public class Gradient {
      * Returns the color based on the position in the gradient.
      */
     public int getGradientColor(float position) {
-		if (position < 0 || position > 1) {
+		if (position < 0.f || position > 1f) {
 			throw new IllegalArgumentException("position must be between 0 and 1");
 		}
 
