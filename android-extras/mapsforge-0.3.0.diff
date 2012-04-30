@@ -1,0 +1,150 @@
+Index: mapsforge-map/src/main/java/org/mapsforge/android/maps/MapActivity.java
+===================================================================
+--- mapsforge-map/src/main/java/org/mapsforge/android/maps/MapActivity.java	(revision 2013)
++++ mapsforge-map/src/main/java/org/mapsforge/android/maps/MapActivity.java	(working copy)
+@@ -36,7 +36,7 @@
+  * When the MapActivity is shut down, the current center position, zoom level and map file of the MapView are saved in a
+  * preferences file and restored in the next startup process.
+  */
+-public abstract class MapActivity extends Activity {
++public abstract class MapActivity extends Activity implements MapContext {
+ 	private static final String KEY_LATITUDE = "latitude";
+ 	private static final String KEY_LONGITUDE = "longitude";
+ 	private static final String KEY_MAP_FILE = "mapFile";
+@@ -131,7 +131,8 @@
+ 	/**
+ 	 * @return a unique MapView ID on each call.
+ 	 */
+-	final int getMapViewId() {
++ 	@Override
++	public int getMapViewId() {
+ 		return ++this.lastMapViewId;
+ 	}
+ 
+@@ -141,7 +142,8 @@
+ 	 * @param mapView
+ 	 *            the calling MapView.
+ 	 */
+-	final void registerMapView(MapView mapView) {
++	@Override
++	public void registerMapView(MapView mapView) {
+ 		this.mapViews.add(mapView);
+ 		restoreMapView(mapView);
+ 	}
+Index: mapsforge-map/src/main/java/org/mapsforge/android/maps/MapView.java
+===================================================================
+--- mapsforge-map/src/main/java/org/mapsforge/android/maps/MapView.java	(revision 2013)
++++ mapsforge-map/src/main/java/org/mapsforge/android/maps/MapView.java	(working copy)
+@@ -140,10 +140,10 @@
+ 	private MapView(Context context, AttributeSet attributeSet, MapGenerator mapGenerator) {
+ 		super(context, attributeSet);
+ 
+-		if (!(context instanceof MapActivity)) {
+-			throw new IllegalArgumentException("context is not an instance of MapActivity");
++		if (!(context instanceof MapContext)) {
++			throw new IllegalArgumentException("context is not an instance of MapContext");
+ 		}
+-		MapActivity mapActivity = (MapActivity) context;
++		MapContext mapContext = (MapContext) context;
+ 
+ 		setBackgroundColor(FrameBuffer.MAP_VIEW_BACKGROUND);
+ 		setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
+@@ -151,7 +151,7 @@
+ 
+ 		this.debugSettings = new DebugSettings(false, false, false);
+ 		this.fileSystemTileCache = new FileSystemTileCache(DEFAULT_TILE_CACHE_SIZE_FILE_SYSTEM,
+-				mapActivity.getMapViewId());
++				mapContext.getMapViewId());
+ 		this.fpsCounter = new FpsCounter();
+ 		this.frameBuffer = new FrameBuffer(this);
+ 		this.inMemoryTileCache = new InMemoryTileCache(DEFAULT_TILE_CACHE_SIZE_IN_MEMORY);
+@@ -161,10 +161,10 @@
+ 		this.mapDatabase = new MapDatabase();
+ 		this.mapViewPosition = new MapViewPosition(this);
+ 		this.mapScaleBar = new MapScaleBar(this);
+-		this.mapZoomControls = new MapZoomControls(mapActivity, this);
++		this.mapZoomControls = new MapZoomControls(context, this);
+ 		this.overlays = new OverlayList(this);
+ 		this.projection = new MapViewProjection(this);
+-		this.touchEventHandler = TouchEventHandler.getInstance(mapActivity, this);
++		this.touchEventHandler = TouchEventHandler.getInstance(context, this);
+ 
+ 		this.mapWorker = new MapWorker(this);
+ 		this.mapWorker.start();
+@@ -186,7 +186,7 @@
+ 			this.mapViewPosition.setZoomLevel(startZoomLevel.byteValue());
+ 		}
+ 
+-		mapActivity.registerMapView(this);
++		mapContext.registerMapView(this);
+ 	}
+ 
+ 	/**
+@@ -714,7 +714,7 @@
+ 		redrawTiles();
+ 	}
+ 
+-	void destroy() {
++	public void onDestroy() {
+ 		this.overlays.clear();
+ 
+ 		this.mapMover.interrupt();
+@@ -763,13 +763,13 @@
+ 		return (byte) Math.max(Math.min(zoom, getMaximumPossibleZoomLevel()), this.mapZoomControls.getZoomLevelMin());
+ 	}
+ 
+-	void onPause() {
++	public void onPause() {
+ 		this.mapWorker.pause();
+ 		this.mapMover.pause();
+ 		this.zoomAnimator.pause();
+ 	}
+ 
+-	void onResume() {
++	public void onResume() {
+ 		this.mapWorker.proceed();
+ 		this.mapMover.proceed();
+ 		this.zoomAnimator.proceed();
+Index: mapsforge-map/src/main/java/org/mapsforge/android/maps/MapContext.java
+===================================================================
+--- mapsforge-map/src/main/java/org/mapsforge/android/maps/MapContext.java	(revision 0)
++++ mapsforge-map/src/main/java/org/mapsforge/android/maps/MapContext.java	(working copy)
+@@ -0,0 +1,37 @@
++/*
++ * Copyright 2010, 2011 mapsforge.org
++ *
++ * This program is free software: you can redistribute it and/or modify it under the
++ * terms of the GNU Lesser General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
++ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
++ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package org.mapsforge.android.maps;
++
++
++/**
++ * Defines a special context which MapView can communicate with
++ */
++public interface MapContext {
++
++	/**
++	 * Returns a unique MapView ID on each call.
++	 * 
++	 * @return the new MapView ID.
++	 */
++	int getMapViewId();
++
++	/**
++	 * This method is called once by each MapView during its setup process.
++	 * 
++	 * @param mapView
++	 *            the calling MapView.
++	 */
++	void registerMapView(MapView mapView);
++}
+\ No newline at end of file
