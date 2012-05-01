@@ -1,10 +1,31 @@
+/*******************************************************************************
+ * Copyright (C) 2012 Team ZapCraft, Colorado School of Mines
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ ******************************************************************************/
+
 /*
-John Sherohman
-Team ZapCraft
+Hardware interface driver. Continuously reads data from the vehicle and
+accelerometer and sends it over serial.
 
 Some ELM interface code taken from OBDuino project, open source
-
-Hardware interface driver
 */
 
 typedef uint8_t byte; // compatability with broken libraries. Arduino 1.0 is very broken.
@@ -88,8 +109,6 @@ void loop()
 
   static long timer = millis();
 
-  // sprintf_P(msg,"%f\n",instantfuel);
-
   if (millis() - timer > 50) { // send 20 times per second
     sprintf(msg, "RPM %d", get_rpm());
     checksum_println(msg);
@@ -125,6 +144,12 @@ void loop()
   }
 }
 
+/*
+Appends the checksum of the string to the end of the string and writes it as a
+new line to serial.
+This function assumes that msg has sufficient space to store the checksum as
+well as the original string. The checksum is always three characters long.
+*/
 void checksum_println(char* msg) {
   char checksum[8];
   int i = 0;
@@ -140,6 +165,7 @@ void checksum_println(char* msg) {
   Serial.println(msg);
 }
 
+// Calibrates the zero points of the accelerometer using a 30 point average.
 void calibrate_accel()
 {
   double xcal = 0.0;
