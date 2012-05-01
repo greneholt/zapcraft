@@ -69,8 +69,6 @@ public class FuelBehaviorActivity extends Activity implements DataProvider, View
 
 		startArduino();
 		startGPS();
-
-		//mDataLogger.start();
 	}
 
     @Override
