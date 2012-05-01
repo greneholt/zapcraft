@@ -11,8 +11,6 @@ typedef uint8_t byte; // compatability with broken libraries. Arduino 1.0 is ver
 
 #include <stdio.h>
 #include <ch9.h>
-#include <Max3421e.h>
-#include <Max3421e_constants.h>
 #include <Max_LCD.h>
 #include <Usb.h>
 #include <SPI.h>

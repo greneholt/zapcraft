@@ -1,4 +1,4 @@
-Add these lines:
+Add these lines to set the permissions on the serial devices for the GPS and Arduino:
 
 /dev/ttyUSB0              0666   root       root
 /dev/ttyACM0              0666   root       root
