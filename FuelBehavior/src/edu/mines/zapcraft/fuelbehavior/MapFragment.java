@@ -67,6 +67,9 @@ public class MapFragment extends Fragment implements Updatable {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreateView(inflater, container, savedInstanceState);
 
+		// MapViews require a context that implements the MapContext interface, so
+		// wrap the current context in a MapFragmentContext and use it when inflating
+		// the view.
 		Context mapFragmentContext = new MapFragmentContext(inflater.getContext());
 		LayoutInflater mapInflater = inflater.cloneInContext(mapFragmentContext);
 
@@ -150,6 +153,7 @@ public class MapFragment extends Fragment implements Updatable {
 		}
 	}
 
+	// Extends the current context to provide the methods necessary for a MapView to function
 	private class MapFragmentContext extends ContextWrapper implements MapContext {
 		public MapFragmentContext(Context context) {
 			super(context);
